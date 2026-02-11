@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f5efe3;
+  --bg-soft: #fbf7f0;
+  --paper-line: rgba(162, 141, 114, 0.12);
+  --text: #3f3933;
+  --text-soft: #6d6459;
+  --card: rgba(255, 252, 247, 0.88);
+  --stroke: rgba(152, 133, 108, 0.35);
+  --accent-rose: #c99f96;
+  --accent-blue: #97b6c8;
+  --accent-sand: #c9b18f;
+  --accent-lavender: #b6abc9;
+  --success: #7f9a77;
+  --danger: #a56666;
+  --shadow-soft: 0 18px 45px rgba(84, 68, 52, 0.12);
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --site-max: 1260px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(201, 159, 150, 0.2), transparent 40%),
+    radial-gradient(circle at 78% 8%, rgba(151, 182, 200, 0.2), transparent 38%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 19px,
+      var(--paper-line) 20px,
+      transparent 21px
+    ),
+    var(--bg);
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.site-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main {
+  flex: 1;
+}
+
+.container {
+  width: min(var(--site-max), calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.section {
+  padding: 72px 0;
+}
+
+.section-tight {
+  padding: 52px 0;
+}
+
+.page-hero {
+  padding-top: 26px;
+}
+
+.title {
+  margin: 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 3vw, 3.3rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--text-soft);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(2px);
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: #fff9f3;
+  background: linear-gradient(115deg, var(--accent-rose), var(--accent-lavender));
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.1);
+}
+
+.btn-soft {
+  color: var(--text);
+  border-color: var(--stroke);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.btn-soft:hover {
+  border-color: rgba(132, 113, 90, 0.65);
+  transform: translateY(-2px);
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+}
+
+.fade-up {
+  animation: fadeUp 0.7s ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 12px 14px;
+  font: inherit;
+  transition: border-color 0.25s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(126, 103, 83, 0.72);
+}
+
+.notice {
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(165, 102, 102, 0.4);
+  color: var(--danger);
+  background: rgba(255, 244, 244, 0.9);
+}
+
+.success {
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(127, 154, 119, 0.4);
+  color: var(--success);
+  background: rgba(241, 250, 239, 0.95);
+}
+
+.price {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.price-old {
+  color: var(--text-soft);
+  text-decoration: line-through;
+  font-size: 0.88rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .container {
+    width: min(var(--site-max), calc(100% - 32px));
+  }
+
+  .section {
+    padding: 54px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 42px 0;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
