@@ -1,14 +1,35 @@
 <script setup>
-defineProps({
+import { ref } from 'vue'
+import { useShopStore } from '../stores/shop'
+
+const props = defineProps({
   product: {
     type: Object,
     required: true
   }
 })
+
+const shopStore = useShopStore()
+const showToast = ref(false)
+
+// Асинхронная функция добавления в корзину
+const handleAddToCart = async () => {
+  // 1. Ждем ответа от бэкенда
+  await shopStore.addToCart(props.product.id, 1)
+  
+  // 2. Показываем всплывашку
+  showToast.value = true
+  
+  // 3. Скрываем через 3 секунды
+  setTimeout(() => {
+    showToast.value = false
+  }, 3000)
+}
 </script>
 
 <template>
-  <div class="group cursor-pointer">
+  <router-link :to="`/product/${product.id}`" class="group cursor-pointer block relative">
+    
     <div class="aspect-[3/4] bg-stone-100 mb-4 overflow-hidden rounded-sm relative">
       <img 
         v-if="product.image"
@@ -21,8 +42,14 @@ defineProps({
         Нет фото
       </div>
 
-      <button class="absolute bottom-4 right-4 bg-white text-charcoal w-10 h-10 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-clay hover:text-white flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 duration-300">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+      <button 
+        @click.prevent="handleAddToCart"
+        class="absolute bottom-4 right-4 bg-charcoal text-white w-11 h-11 rounded-full shadow-lg transition-all duration-300 hover:bg-clay flex items-center justify-center hover:scale-110 z-10"
+        title="Добавить в коллекцию"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
       </button>
     </div>
 
@@ -33,5 +60,26 @@ defineProps({
       </h4>
       <span class="text-charcoal font-medium">{{ product.price }} ₽</span>
     </div>
-  </div>
+    
+  </router-link>
+
+  <transition name="toast">
+    <div v-if="showToast" class="fixed bottom-10 right-10 bg-charcoal text-white px-8 py-5 rounded-sm shadow-2xl flex items-center gap-4 z-50 pointer-events-none">
+      <svg class="w-6 h-6 text-clay" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      <span class="font-serif text-lg tracking-wide">Добавлено в коллекцию</span>
+    </div>
+  </transition>
 </template>
+
+<style scoped>
+/* Анимация для уведомления */
+.toast-enter-active, .toast-leave-active {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+}
+</style>

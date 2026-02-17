@@ -99,10 +99,11 @@ def get_products(
 
 @app.get("/api/products/{product_id}")
 def product_details(product_id: int) -> dict[str, Any]:
-    item = get_product_by_id(product_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Товар не найден")
-    return item
+    for p in products:
+        if p.get("id") == product_id:
+            return p
+            
+    raise HTTPException(status_code=404, detail="Товар не найден")
 
 
 @app.get("/api/search/suggest")
@@ -136,8 +137,12 @@ def add_to_cart(payload: CartItemInput) -> dict[str, Any]:
         if line["product_id"] == payload.product_id:
             line["qty"] += payload.qty
             return recalc_cart(cart_state)
-
-    cart_state["items"].append(payload.model_dump())
+        
+    cart_state["items"].append({
+        "product_id": payload.product_id, 
+        "qty": payload.qty
+    })
+    
     return recalc_cart(cart_state)
 
 

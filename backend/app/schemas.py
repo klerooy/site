@@ -1,9 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, List
 
 from pydantic import BaseModel, Field
 
+class Review(BaseModel):
+    id: int
+    user: str
+    date: str
+    text: str
+    rating: int
+
+class ProductSpec(BaseModel):
+    label: str
+    value: str
 
 class Product(BaseModel):
     id: int
@@ -13,6 +23,9 @@ class Product(BaseModel):
     category: str
     description: Optional[str] = None
     is_popular: bool = False
+    photos: List[str] = []
+    specs: List[ProductSpec] = []
+    reviews: List[Review] = []
 
 class CartItemInput(BaseModel):
     product_id: int

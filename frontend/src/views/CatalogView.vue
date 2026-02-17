@@ -1,260 +1,204 @@
 <script setup>
-import { computed, onMounted, reactive, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-
+import { ref, computed, onMounted, watch } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
-import { useShopStore } from '../stores/shop'
 
-const store = useShopStore()
-const route = useRoute()
-const router = useRouter()
+// --- СОСТОЯНИЕ ---
+const products = ref([])
+const isLoading = ref(true)
 
-const filters = reactive({
-  category: '',
-  query: '',
-  sort: 'new',
-  type: '',
-  brand: '',
-  color: '',
-  shape: '',
-  size: '',
-  hardness: ''
-})
+// Активные фильтры
+const activeCategory = ref('Все')
+const activeSort = ref('popular')
 
-const filterLabels = {
-  type: 'Тип',
-  brand: 'Бренд',
-  color: 'Цвет',
-  shape: 'Форма',
-  size: 'Размер',
-  hardness: 'Твердость'
-}
+// --- ДАННЫЕ ДЛЯ ФИЛЬТРОВ ---
+const categories = ['Все', 'Акварель', 'Масло', 'Кисти', 'Холсты', 'Бумага']
 
 const sortOptions = [
-  { value: 'new', label: 'Сначала новые' },
-  { value: 'popular', label: 'По популярности' },
-  { value: 'price_asc', label: 'Цена по возрастанию' },
-  { value: 'price_desc', label: 'Цена по убыванию' }
+  { value: 'popular', label: 'Сначала популярные' },
+  { value: 'new', label: 'Новинки' },
+  { value: 'price_asc', label: 'Сначала дешевле' },
+  { value: 'price_desc', label: 'Сначала дороже' }
 ]
 
-const availableFilterKeys = computed(() => Object.keys(store.catalog.filters || {}))
-
-function setFromRoute() {
-  filters.category = String(route.query.category || '')
-  filters.query = String(route.query.query || '')
-  filters.sort = String(route.query.sort || 'new')
-  filters.type = String(route.query.type || '')
-  filters.brand = String(route.query.brand || '')
-  filters.color = String(route.query.color || '')
-  filters.shape = String(route.query.shape || '')
-  filters.size = String(route.query.size || '')
-  filters.hardness = String(route.query.hardness || '')
-}
-
-function createQuery() {
-  const query = {}
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value) {
-      query[key] = value
-    }
-  })
-  return query
-}
-
-async function fetchCatalog() {
-  await store.fetchCatalog(createQuery())
-}
-
-function applyFilters() {
-  router.replace({ name: 'catalog', query: createQuery() })
-}
-
-function resetFilters() {
-  Object.keys(filters).forEach((key) => {
-    filters[key] = key === 'sort' ? 'new' : ''
-  })
-  applyFilters()
-}
-
-onMounted(async () => {
-  await store.fetchCategories()
-  setFromRoute()
-  await fetchCatalog()
+// Динамические параметры фильтрации (меняются от категории)
+const dynamicFilters = computed(() => {
+  if (activeCategory.value === 'Акварель' || activeCategory.value === 'Масло') {
+    return [
+      { name: 'Бренд', options: ['Невская Палитра', 'Мастер-Класс', 'Van Gogh', 'Schmincke'] },
+      { name: 'Форма выпуска', options: ['Кюветы', 'Тубы', 'Наборы'] }
+    ]
+  }
+  if (activeCategory.value === 'Кисти') {
+    return [
+      { name: 'Ворс', options: ['Белка', 'Колонок', 'Синтетика', 'Щетина'] },
+      { name: 'Форма', options: ['Круглая', 'Плоская', 'Флейц', 'Лайнер'] }
+    ]
+  }
+  if (activeCategory.value === 'Бумага') {
+    return [
+      { name: 'Фактура', options: ['Fin (Мелкое зерно)', 'Torchon (Крупное зерно)', 'Satin (Гладкая)'] },
+      { name: 'Плотность', options: ['200 г/м²', '300 г/м²'] }
+    ]
+  }
+  return [] // Для остальных или "Все" не показываем специфичные фильтры
 })
 
-watch(
-  () => route.query,
-  async () => {
-    setFromRoute()
-    await fetchCatalog()
+// --- ЗАГРУЗКА ДАННЫХ ---
+const fetchProducts = async () => {
+  isLoading.value = true
+  try {
+    const params = new URLSearchParams()
+    if (activeCategory.value !== 'Все') {
+      params.append('category', activeCategory.value)
+    }
+    params.append('sort', activeSort.value)
+
+    const res = await fetch(`/api/products?${params.toString()}`)
+    if (res.ok) {
+      const data = await res.json()
+      // ИСПРАВЛЕНИЕ: берем массив из ключа items
+      products.value = data.items ? data.items : data 
+    } else {
+      products.value = []
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки каталога:', error)
+    products.value = []
+  } finally {
+    isLoading.value = false
   }
-)
+}
+
+// Загружаем при монтировании компонента
+onMounted(() => {
+  fetchProducts()
+})
+
+// При изменении категории или сортировки - заново загружаем товары
+watch([activeCategory, activeSort], () => {
+  fetchProducts()
+})
+
+// Сброс фильтров
+const resetFilters = () => {
+  activeCategory.value = 'Все'
+  activeSort.value = 'popular'
+}
 </script>
 
 <template>
-  <section class="section">
-    <div class="container">
-      <div class="catalog-head">
-        <div>
-          <h1 class="title">Каталог художественных материалов</h1>
-          <p class="subtitle">Точные фильтры по категориям, брендам и свойствам материалов.</p>
-        </div>
-        <span class="pill">Найдено: {{ store.catalog.count }}</span>
+  <div class="bg-paper min-h-screen pb-24">
+    <div class="container mx-auto px-6 py-12 md:py-20">
+      
+      <nav class="mb-8 text-xs uppercase tracking-widest text-stone-500">
+        <router-link to="/" class="hover:text-clay transition-colors">Главная</router-link>
+        <span class="mx-3 text-sand">/</span>
+        <span class="text-charcoal">Каталог</span>
+      </nav>
+
+      <div class="mb-12 border-b border-sand pb-8">
+        <h1 class="text-4xl md:text-5xl font-serif italic text-charcoal">Коллекция материалов</h1>
+        <p class="text-stone-500 font-light mt-4 text-lg">Инструменты, подобранные художниками для художников.</p>
       </div>
 
-      <div class="catalog-layout">
-        <aside class="filters card">
-          <div class="filters-top">
-            <h2>Фильтры</h2>
-            <button type="button" class="btn btn-soft" @click="resetFilters">Сбросить</button>
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+        
+        <aside class="w-full lg:w-1/4 lg:sticky lg:top-28 flex flex-col gap-10">
+          
+          <div>
+            <h3 class="font-serif text-2xl text-charcoal mb-6">Категории</h3>
+            <ul class="space-y-2">
+              <li v-for="cat in categories" :key="cat">
+                <button 
+                  @click="activeCategory = cat"
+                  class="w-full text-left py-2 px-4 rounded-sm transition-all duration-300 uppercase tracking-widest text-sm font-medium"
+                  :class="activeCategory === cat ? 'bg-charcoal text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-charcoal'"
+                >
+                  {{ cat }}
+                </button>
+              </li>
+            </ul>
           </div>
 
-          <div class="filter-group">
-            <label for="search">Поиск</label>
-            <input id="search" v-model="filters.query" class="input" type="text" placeholder="Название, бренд, цвет" />
-          </div>
+          <transition-group name="fade">
+            <div v-for="filter in dynamicFilters" :key="filter.name">
+              <h4 class="font-serif text-xl text-charcoal mb-4 border-b border-sand/50 pb-2">{{ filter.name }}</h4>
+              <ul class="space-y-3">
+                <li v-for="opt in filter.options" :key="opt" class="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    :id="opt" 
+                    class="w-4 h-4 text-clay bg-white border-stone-300 rounded-sm focus:ring-clay cursor-pointer accent-clay"
+                  >
+                  <label :for="opt" class="text-sm font-light text-stone-600 cursor-pointer hover:text-clay transition-colors">
+                    {{ opt }}
+                  </label>
+                </li>
+              </ul>
+            </div>
+          </transition-group>
 
-          <div class="filter-group">
-            <label for="category">Категория</label>
-            <select id="category" v-model="filters.category" class="select">
-              <option value="">Все категории</option>
-              <option v-for="cat in store.categories" :key="cat.slug" :value="cat.slug">{{ cat.name }}</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="sort">Сортировка</label>
-            <select id="sort" v-model="filters.sort" class="select">
-              <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-
-          <div class="filter-group" v-for="key in availableFilterKeys" :key="key">
-            <label :for="key">{{ filterLabels[key] || key }}</label>
-            <select :id="key" v-model="filters[key]" class="select">
-              <option value="">Все</option>
-              <option
-                v-for="value in store.catalog.filters[key]"
-                :key="`${key}-${value}`"
-                :value="value"
-              >
-                {{ value }}
-              </option>
-            </select>
-          </div>
-
-          <button class="btn btn-primary" type="button" @click="applyFilters">Применить фильтры</button>
         </aside>
 
-        <div>
-          <p v-if="store.error" class="notice">{{ store.error }}</p>
+        <main class="w-full lg:w-3/4">
+          
+          <div class="flex flex-col sm:flex-row justify-between items-center bg-stone-50 py-4 px-6 rounded-sm mb-10">
+            <div class="text-sm text-stone-500 font-light mb-4 sm:mb-0">
+              Показано материалов: <span class="font-medium text-charcoal">{{ products.length }}</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+              <span class="text-xs uppercase tracking-widest text-stone-500">Сортировка:</span>
+              <select 
+                v-model="activeSort" 
+                class="bg-transparent text-charcoal font-medium border-b border-stone-300 py-1 pr-6 focus:outline-none focus:border-clay cursor-pointer text-sm"
+              >
+                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+          </div>
 
-          <div class="product-grid" v-if="store.catalog.items.length">
-            <ProductCard
-              v-for="product in store.catalog.items"
-              :key="product.id"
-              :product="product"
+          <div v-if="isLoading" class="flex justify-center items-center py-32">
+            <div class="font-serif italic text-2xl text-clay animate-pulse">Ищем лучшие материалы...</div>
+          </div>
+
+          <div v-else-if="products.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+            <ProductCard 
+              v-for="product in products" 
+              :key="product.id" 
+              :product="product" 
             />
           </div>
 
-          <div class="empty card" v-else>
-            <h3>Ничего не найдено</h3>
-            <p>Попробуйте изменить фильтры или снять часть ограничений.</p>
+          <div v-else class="text-center py-32 bg-stone-50 rounded-sm">
+            <h2 class="text-3xl font-serif italic text-charcoal mb-4">Материалы не найдены</h2>
+            <p class="text-stone-500 font-light mb-8">Попробуйте изменить параметры фильтрации или выбрать другую категорию.</p>
+            <button 
+              @click="resetFilters"
+              class="px-8 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-white transition-all duration-300 uppercase tracking-widest text-sm rounded-sm"
+            >
+              Сбросить фильтры
+            </button>
           </div>
-        </div>
+
+        </main>
+
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.catalog-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 18px;
-  margin-bottom: 26px;
+/* Анимация для появления/исчезновения блоков динамических фильтров */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.4s ease;
 }
-
-.catalog-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-}
-
-.filters {
-  padding: 20px;
-  position: sticky;
-  top: 90px;
-  align-self: start;
-  display: grid;
-  gap: 12px;
-}
-
-.filters-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filters-top h2 {
-  margin: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.9rem;
-}
-
-.filter-group {
-  display: grid;
-  gap: 6px;
-}
-
-.filter-group label {
-  color: var(--text-soft);
-  font-size: 0.88rem;
-}
-
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.empty {
-  padding: 28px;
-}
-
-.empty h3 {
-  margin: 0;
-}
-
-.empty p {
-  color: var(--text-soft);
-}
-
-@media (max-width: 1100px) {
-  .catalog-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .filters {
-    position: static;
-  }
-
-  .product-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .catalog-head {
-    flex-direction: column;
-    align-items: start;
-  }
-
-  .product-grid {
-    grid-template-columns: 1fr;
-  }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

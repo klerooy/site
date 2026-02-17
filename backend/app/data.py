@@ -47,9 +47,21 @@ products: list[dict[str, Any]] = [
         "id": 101,
         "name": "Набор акварели \"Белые ночи\"",
         "price": 2400,
-        "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800&auto=format&fit=crop",
+        "image": "https://images.unsplash.com/photo-1629196914375-f7e48f477b6d?auto=format&fit=crop&w=500&q=80",
         "category": "Акварель",
-        "is_popular": True
+        "description": "Профессиональные акварельные краски высшего качества.",
+        "is_popular": True,
+        "photos": [
+            "https://images.unsplash.com/photo-1629196914375-f7e48f477b6d?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1000&q=80"
+        ],
+        "specs": [
+            {"label": "Светостойкость", "value": "Высокая (***)"},
+            {"label": "Форма", "value": "Кюветы 2.5мл"}
+        ],
+        "reviews": [
+            {"id": 1, "user": "Анна", "date": "10.02.2026", "text": "Лучшая акварель!", "rating": 5}
+        ]
     },
     {
         "id": 102,

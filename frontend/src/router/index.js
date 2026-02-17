@@ -11,7 +11,7 @@ const CheckoutView = () => import('../views/CheckoutView.vue')
 const BlogView = () => import('../views/BlogView.vue')
 
 const routes = [
-  { path: '/', name: 'home', component: HomeView },
+  { path: '/', component: HomeView },
   { path: '/catalog', name: 'catalog', component: CatalogView },
   { path: '/product/:id', name: 'product', component: ProductView, props: true },
   { path: '/specials', name: 'specials', component: SpecialsView },

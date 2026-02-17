@@ -1,5 +1,13 @@
 <script setup>
+import { onMounted } from 'vue'
 import { RouterView, RouterLink } from 'vue-router'
+import { useShopStore } from './stores/shop'
+
+const cartStore = useShopStore()
+
+onMounted(() => {
+  cartStore.fetchCart()
+})
 </script>
 
 <template>
@@ -22,10 +30,15 @@ import { RouterView, RouterLink } from 'vue-router'
             <span class="sr-only">Поиск</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </button>
-          <RouterLink to="/cart" class="hover:text-clay relative">
-            <span class="sr-only">Корзина</span>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-            <span class="absolute -top-2 -right-2 bg-clay text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+          <RouterLink to="/cart" class="text-ink hover:text-clay transition-transform hover:scale-110 relative">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            
+            <transition name="scale">
+              <span 
+                v-if="cartStore.cartCount > 0"
+                class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-clay rounded-full border border-paper"
+              ></span>
+            </transition>
           </RouterLink>
           <RouterLink to="/account" class="text-ink hover:text-clay transition-transform hover:scale-110">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>

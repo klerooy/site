@@ -28,7 +28,7 @@ def format_price(value: float) -> float:
 
 
 def get_home_payload() -> dict[str, Any]:
-    popular = sorted(products, key=lambda item: item["popularity"], reverse=True)[:6]
+    popular = sorted(products, key=lambda item: item.get("popularity", 0), reverse=True)[:6]
     promotions = [product for product in products if product.get("old_price")][:4]
     return {
         "slider": home_slider,
@@ -88,8 +88,8 @@ def filter_products(
 ) -> dict[str, Any]:
     result = deepcopy(products)
 
-    if category:
-        result = [item for item in result if item["category"] == category]
+    if category and category != "Все":
+        result = [item for item in result if item.get("category") == category]
 
     if query:
         q = query.lower().strip()
@@ -120,7 +120,7 @@ def filter_products(
     elif sort == "price_desc":
         result.sort(key=lambda item: item["price"], reverse=True)
     elif sort == "popular":
-        result.sort(key=lambda item: item["popularity"], reverse=True)
+        result.sort(key=lambda item: item.get("popularity", 0), reverse=True)
     else:
         result.sort(key=lambda item: item["id"], reverse=True)
 
@@ -196,7 +196,7 @@ def get_search_suggestions(query: str) -> list[dict[str, Any]]:
                     "name": item["name"],
                     "brand": item.get("brand"),
                     "color": item.get("color"),
-                    "slug": item["slug"],
+                    "slug": item.get("slug", ""),
                 }
             )
 

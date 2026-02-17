@@ -20,6 +20,19 @@ async function request(path, options = {}) {
   return payload
 }
 
+export async function getProductById(id) {
+  try {
+    const response = await fetch(`${API_BASE}/products/${id}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Не удалось загрузить товар с ID ${id}:`, error);
+    return null;
+  }
+}
+
 export async function getPopularProducts() {
   try {
     const response = await fetch(`${API_BASE}/products/popular`);
