@@ -690,7 +690,7 @@ account_demo: dict[str, Any] = {
 }
 
 contacts_info: dict[str, Any] = {
-    "address": "Москва, ул. Артельная, 12",
+    "address": "Курск, ул. Артельная, 12",
     "phone": "+7 (495) 123-45-67",
     "email": "hello@artistic-shop.ru",
     "work_hours": "Ежедневно: 10:00-21:00",
@@ -699,3 +699,28 @@ contacts_info: dict[str, Any] = {
 }
 
 contact_messages: list[dict[str, Any]] = []
+
+blog_posts: list[dict[str, Any]] = [
+    {
+        "id": 1,
+        "title": "Как выбрать свою первую акварель: полное руководство",
+        "excerpt": "Разбираемся в пигментах, связующих и форматах. Что лучше для новичка: кюветы или тубы? И почему не стоит экономить на бумаге.",
+        "category": "Уроки и техники",
+        "date": "15 Фев 2026",
+        "readTime": "8 мин",
+        "image": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1200&q=80",
+        "featured": True,
+        "content": "",
+    },
+    {
+        "id": 2,
+        "title": "Колонок против синтетики: битва кистей",
+        "excerpt": "Тестируем современные синтетические кисти и сравниваем их с классическим натуральным ворсом. Результаты вас удивят.",
+        "category": "Обзоры материалов",
+        "date": "10 Фев 2026",
+        "readTime": "5 мин",
+        "image": "https://images.unsplash.com/photo-1515462277126-2dd0c162007a?auto=format&fit=crop&w=800&q=80",
+        "featured": False,
+        "content": "",
+    },
+]

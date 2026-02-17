@@ -11,28 +11,28 @@ const categories = [
     title: 'Масляные краски',
     subtitle: 'Классика живописи',
     image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800&auto=format&fit=crop',
-    link: '/catalog/oil'
+    link: { path: '/catalog', query: { category: 'Масло' } }
   },
   {
     id: 2,
     title: 'Акварель',
     subtitle: 'Легкость и прозрачность',
     image: 'https://images.unsplash.com/photo-1629196914375-f7e48f477b6d?q=80&w=800&auto=format&fit=crop',
-    link: '/catalog/watercolor'
+    link: { path: '/catalog', query: { category: 'Акварель' } }
   },
   {
     id: 3,
     title: 'Кисти',
     subtitle: 'Инструменты мастера',
     image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=800&auto=format&fit=crop',
-    link: '/catalog/brushes'
+    link: { path: '/catalog', query: { category: 'Кисти' } }
   },
   {
     id: 4,
     title: 'Бумага и Холсты',
     subtitle: 'Основа творчества',
     image: 'https://republica.ru/upload/iblock/a19/58A9332.jpg',
-    link: '/catalog/paper'
+    link: { path: '/catalog', query: { category: 'Бумага' } }
   }
 ]
 

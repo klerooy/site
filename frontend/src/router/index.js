@@ -1,32 +1,47 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useShopStore } from '../stores/shop'
 
-const HomeView = () => import('../views/HomeView.vue')
-const CatalogView = () => import('../views/CatalogView.vue')
-const ProductView = () => import('../views/ProductView.vue')
-const SpecialsView = () => import('../views/SpecialsView.vue')
-const ContactsView = () => import('../views/ContactsView.vue')
-const AccountView = () => import('../views/AccountView.vue')
-const CartView = () => import('../views/CartView.vue')
-const CheckoutView = () => import('../views/CheckoutView.vue')
-const BlogView = () => import('../views/BlogView.vue')
-
-const routes = [
-  { path: '/', component: HomeView },
-  { path: '/catalog', name: 'catalog', component: CatalogView },
-  { path: '/product/:id', name: 'product', component: ProductView, props: true },
-  { path: '/specials', name: 'specials', component: SpecialsView },
-  { path: '/contacts', name: 'contacts', component: ContactsView },
-  { path: '/account', name: 'account', component: AccountView },
-  { path: '/cart', name: 'cart', component: CartView },
-  { path: '/checkout', name: 'checkout', component: CheckoutView },
-  { path: '/blog', name: 'blog', component: BlogView }
-]
+import HomeView from '../views/HomeView.vue'
+import CatalogView from '../views/CatalogView.vue'
+import ProductView from '../views/ProductView.vue'
+import CartView from '../views/CartView.vue'
+import CheckoutView from '../views/CheckoutView.vue'
+import AccountView from '../views/AccountView.vue'
+import BlogView from '../views/BlogView.vue'
+import AdminView from '../views/AdminView.vue'
+import ContactsView from '../views/ContactsView.vue'
+import PrivacyPolicyView from '../views/PrivacyPolicyView.vue'
+import OfferView from '../views/OfferView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: [
+    { path: '/', component: HomeView },
+    { path: '/catalog', component: CatalogView },
+    { path: '/product/:id', name: 'product', component: ProductView, props: true },
+    { path: '/cart', component: CartView },
+    { path: '/checkout', component: CheckoutView },
+    { path: '/account', component: AccountView },
+    { path: '/blog', component: BlogView },
+    { path: '/contacts', component: ContactsView },
+    { path: '/privacy', component: PrivacyPolicyView },
+    { path: '/offer', component: OfferView },
+    { 
+      path: '/admin', 
+      name: 'admin',
+      component: AdminView,
+      beforeEnter: (to, from, next) => {
+        const store = useShopStore()
+        if (store.isAdmin) {
+          next()
+        } else {
+          next('/account')
+        }
+      }
+    }
+  ],
   scrollBehavior() {
-    return { top: 0, behavior: 'smooth' }
+    return { top: 0 }
   }
 })
 

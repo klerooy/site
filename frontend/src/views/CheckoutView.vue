@@ -1,178 +1,247 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useShopStore } from '../stores/shop'
 
-const store = useShopStore()
+const shopStore = useShopStore()
+const router = useRouter()
 
-const form = reactive({
-  full_name: '',
+const isLoading = ref(true)
+const isSubmitting = ref(false)
+const orderSuccess = ref(false)
+const orderNumber = ref('')
+const errorMessage = ref('')
+
+const form = ref({
+  fullName: '',
   phone: '',
-  delivery_method: 'courier',
-  payment_method: 'card',
-  address: ''
+  address: '',
+  paymentMethod: 'card' 
 })
 
-const successMessage = ref('')
-const orderId = ref('')
-
-watch(
-  () => form.delivery_method,
-  async (value) => {
-    await store.setDeliveryMethod(value)
-  }
-)
-
-async function submit() {
-  successMessage.value = ''
-  orderId.value = ''
-
-  try {
-    const result = await store.checkout({ ...form })
-    successMessage.value = result.message
-    orderId.value = result.order.id
-    form.full_name = ''
-    form.phone = ''
-    form.address = ''
-  } catch {
-    // Error already stored
-  }
-}
+const deliveryMethod = computed({
+  get: () => shopStore.cart.delivery_method || 'courier',
+  set: async (val) => { await shopStore.setDeliveryMethod(val) }
+})
 
 onMounted(async () => {
-  await store.fetchCart()
-  form.delivery_method = store.cart.delivery_method || 'courier'
+  await shopStore.fetchCart()
+  
+  if (shopStore.cartCount === 0) {
+    router.push('/catalog')
+  } else {
+    // Подставляем имя, если пользователь авторизован
+    if (shopStore.user) {
+      form.value.fullName = shopStore.user.name
+    }
+    isLoading.value = false
+  }
 })
+
+const submitOrder = async () => {
+  errorMessage.value = ''
+  
+  if (deliveryMethod.value === 'courier' && !form.value.address.trim()) {
+    errorMessage.value = 'Пожалуйста, укажите адрес для курьерской доставки.'
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const payload = {
+      full_name: form.value.fullName,
+      phone: form.value.phone,
+      delivery_method: deliveryMethod.value,
+      payment_method: form.value.paymentMethod,
+      address: deliveryMethod.value === 'courier' ? form.value.address : null
+    }
+
+    const response = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      let errMsg = 'Произошла ошибка при оформлении заказа.'
+      
+      // Расшифровываем Pydantic ошибку (ту самую [object Object])
+      if (err.detail) {
+        if (Array.isArray(err.detail)) {
+          errMsg = err.detail.map(e => {
+            if (e.loc.includes('phone')) return 'Укажите корректный телефон (минимум 6 символов).'
+            if (e.loc.includes('full_name')) return 'Слишком короткое имя.'
+            return e.msg
+          }).join(' ')
+        } else if (typeof err.detail === 'string') {
+          errMsg = err.detail
+        }
+      }
+      throw new Error(errMsg)
+    }
+
+    const data = await response.json()
+    orderNumber.value = data.order.id
+    orderSuccess.value = true
+    
+    await shopStore.fetchCart()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
-  <section class="section">
-    <div class="container">
-      <h1 class="title">Оформление заказа</h1>
-      <p class="subtitle">Выберите доставку и оплату, заполните данные получателя.</p>
-
-      <div v-if="store.cart.detailed_items?.length" class="checkout-layout">
-        <article class="card form-card">
-          <h2>Данные получателя</h2>
-          <form class="checkout-form" @submit.prevent="submit">
-            <input v-model="form.full_name" class="input" type="text" placeholder="ФИО" required />
-            <input v-model="form.phone" class="input" type="tel" placeholder="Телефон" required />
-
-            <label>
-              Способ доставки
-              <select v-model="form.delivery_method" class="select">
-                <option value="courier">Курьер</option>
-                <option value="pickup">Самовывоз</option>
-              </select>
-            </label>
-
-            <label>
-              Способ оплаты
-              <select v-model="form.payment_method" class="select">
-                <option value="card">Банковская карта</option>
-                <option value="sbp">СБП</option>
-                <option value="cash">Наличными</option>
-              </select>
-            </label>
-
-            <textarea
-              v-if="form.delivery_method === 'courier'"
-              v-model="form.address"
-              class="textarea"
-              rows="4"
-              placeholder="Адрес доставки"
-              required
-            />
-
-            <button class="btn btn-primary" type="submit">Подтвердить заказ</button>
-          </form>
-
-          <p v-if="successMessage" class="success">
-            {{ successMessage }}
-            <br />
-            Номер: <strong>{{ orderId }}</strong>
-          </p>
-
-          <p v-if="store.error" class="notice">{{ store.error }}</p>
-        </article>
-
-        <aside class="card summary-card">
-          <h2>Сумма к оплате</h2>
-          <div class="summary-line" v-for="line in store.cart.detailed_items" :key="line.product.id">
-            <span>{{ line.product.name }} × {{ line.qty }}</span>
-            <strong>{{ line.line_total.toLocaleString('ru-RU') }} ₽</strong>
+  <div class="bg-paper min-h-screen pb-24">
+    <div class="container mx-auto px-6 py-12 md:py-20">
+      
+      <transition name="fade" mode="out-in">
+        <div v-if="orderSuccess" class="py-20 flex flex-col items-center justify-center text-center">
+          <div class="w-24 h-24 bg-stone-100 rounded-full flex items-center justify-center mb-8 text-clay">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path></svg>
           </div>
+          <h1 class="text-5xl font-serif italic text-charcoal mb-4">Спасибо за заказ!</h1>
+          <p class="text-stone-500 font-light text-lg mb-2">Ваш заказ <span class="font-medium text-charcoal">#{{ orderNumber }}</span> успешно оформлен.</p>
+          <p class="text-stone-500 font-light mb-12">Мы уже собираем материалы и скоро свяжемся с вами.</p>
+          <router-link to="/account" class="px-10 py-4 bg-charcoal text-white hover:bg-clay transition-colors uppercase tracking-widest text-sm font-medium rounded-sm shadow-md hover:-translate-y-0.5">
+            Перейти в профиль
+          </router-link>
+        </div>
 
-          <div class="divider" />
-          <div class="summary-line"><span>Товары</span><strong>{{ store.cart.subtotal.toLocaleString('ru-RU') }} ₽</strong></div>
-          <div class="summary-line"><span>Скидка</span><strong>-{{ store.cart.discount.toLocaleString('ru-RU') }} ₽</strong></div>
-          <div class="summary-line"><span>Доставка</span><strong>{{ store.cart.delivery_cost.toLocaleString('ru-RU') }} ₽</strong></div>
-          <div class="summary-line total"><span>Итого</span><strong>{{ store.cart.total.toLocaleString('ru-RU') }} ₽</strong></div>
-        </aside>
-      </div>
+        <div v-else-if="!isLoading">
+          <nav class="mb-10 text-xs uppercase tracking-widest text-stone-500">
+            <router-link to="/" class="hover:text-clay transition-colors">Главная</router-link>
+            <span class="mx-3 text-sand">/</span>
+            <router-link to="/cart" class="hover:text-clay transition-colors">Коллекция</router-link>
+            <span class="mx-3 text-sand">/</span>
+            <span class="text-charcoal">Оформление</span>
+          </nav>
 
-      <div v-else class="card empty">
-        <h3>Нечего оформлять</h3>
-        <p>Корзина пустая, добавьте товары и вернитесь к оформлению.</p>
-        <RouterLink class="btn btn-primary" to="/catalog">В каталог</RouterLink>
-      </div>
+          <h1 class="text-4xl md:text-5xl font-serif italic text-charcoal mb-12 border-b border-sand pb-8">Оформление заказа</h1>
+
+          <form @submit.prevent="submitOrder" class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+            
+            <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-12">
+              <section>
+                <h2 class="font-serif text-2xl text-charcoal mb-6">Контактные данные</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-stone-500 mb-2">Имя и Фамилия</label>
+                    <input v-model="form.fullName" type="text" required placeholder="Анна Морозова" class="w-full bg-white border border-sand px-4 py-3 text-sm focus:outline-none focus:border-clay transition-colors rounded-sm text-charcoal placeholder:text-stone-300">
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-stone-500 mb-2">Телефон</label>
+                    <input v-model="form.phone" type="tel" required placeholder="+7 (999) 000-00-00" class="w-full bg-white border border-sand px-4 py-3 text-sm focus:outline-none focus:border-clay transition-colors rounded-sm text-charcoal placeholder:text-stone-300">
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 class="font-serif text-2xl text-charcoal mb-6">Способ доставки</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <label class="flex flex-col p-4 border rounded-sm cursor-pointer transition-all" :class="deliveryMethod === 'courier' ? 'border-clay bg-white shadow-sm' : 'border-sand hover:border-clay/50 bg-transparent'">
+                    <div class="flex items-center gap-3 mb-2">
+                      <div class="w-4 h-4 rounded-full border flex justify-center items-center" :class="deliveryMethod === 'courier' ? 'border-clay' : 'border-stone-300'"><div v-if="deliveryMethod === 'courier'" class="w-2 h-2 bg-clay rounded-full"></div></div>
+                      <span class="font-medium text-charcoal">Курьером до двери</span>
+                    </div>
+                    <span class="text-sm text-stone-500 pl-7 font-light">Доставка 350 ₽</span>
+                  </label>
+
+                  <label class="flex flex-col p-4 border rounded-sm cursor-pointer transition-all" :class="deliveryMethod === 'pickup' ? 'border-clay bg-white shadow-sm' : 'border-sand hover:border-clay/50 bg-transparent'">
+                    <div class="flex items-center gap-3 mb-2">
+                      <div class="w-4 h-4 rounded-full border flex justify-center items-center" :class="deliveryMethod === 'pickup' ? 'border-clay' : 'border-stone-300'"><div v-if="deliveryMethod === 'pickup'" class="w-2 h-2 bg-clay rounded-full"></div></div>
+                      <span class="font-medium text-charcoal">Самовывоз</span>
+                    </div>
+                    <span class="text-sm text-stone-500 pl-7 font-light">Бесплатно из студии</span>
+                  </label>
+                </div>
+
+                <transition name="fade">
+                  <div v-if="deliveryMethod === 'courier'">
+                    <label class="block text-xs uppercase tracking-widest text-stone-500 mb-2">Адрес доставки</label>
+                    <input v-model="form.address" type="text" placeholder="Город, улица, дом, квартира" class="w-full bg-white border border-sand px-4 py-3 text-sm focus:outline-none focus:border-clay transition-colors rounded-sm text-charcoal placeholder:text-stone-300">
+                  </div>
+                </transition>
+              </section>
+
+              <section>
+                <h2 class="font-serif text-2xl text-charcoal mb-6">Способ оплаты</h2>
+                <div class="flex flex-col gap-3">
+                  <label class="flex items-center gap-3 p-4 border rounded-sm cursor-pointer transition-all" :class="form.paymentMethod === 'card' ? 'border-clay bg-white shadow-sm' : 'border-sand hover:border-clay/50 bg-transparent'">
+                    <input type="radio" v-model="form.paymentMethod" value="card" class="hidden">
+                    <div class="w-4 h-4 rounded-full border flex justify-center items-center" :class="form.paymentMethod === 'card' ? 'border-clay' : 'border-stone-300'"><div v-if="form.paymentMethod === 'card'" class="w-2 h-2 bg-clay rounded-full"></div></div>
+                    <span class="text-charcoal">Картой на сайте</span>
+                  </label>
+                  <label class="flex items-center gap-3 p-4 border rounded-sm cursor-pointer transition-all" :class="form.paymentMethod === 'cash' ? 'border-clay bg-white shadow-sm' : 'border-sand hover:border-clay/50 bg-transparent'">
+                    <input type="radio" v-model="form.paymentMethod" value="cash" class="hidden">
+                    <div class="w-4 h-4 rounded-full border flex justify-center items-center" :class="form.paymentMethod === 'cash' ? 'border-clay' : 'border-stone-300'"><div v-if="form.paymentMethod === 'cash'" class="w-2 h-2 bg-clay rounded-full"></div></div>
+                    <span class="text-charcoal">При получении</span>
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <div class="lg:col-span-5 xl:col-span-4 bg-stone-50 p-8 rounded-sm sticky top-28 border border-sand/50 shadow-sm">
+              <h2 class="font-serif text-2xl text-charcoal mb-6">Ваш заказ</h2>
+              
+              <div class="space-y-4 mb-8 border-b border-sand pb-8 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                <div v-for="item in shopStore.cart.detailed_items" :key="item.product.id" class="flex gap-4 items-center">
+                  <img v-if="item.product.image" :src="item.product.image" class="w-12 h-16 object-cover rounded-sm border border-sand">
+                  <div class="flex-grow">
+                    <div class="text-sm font-medium text-charcoal leading-tight mb-1 truncate max-w-[180px]">{{ item.product.name }}</div>
+                    <div class="text-xs text-stone-500 font-light">{{ item.qty }} шт.</div>
+                  </div>
+                  <div class="text-sm font-medium text-charcoal whitespace-nowrap">{{ item.line_total }} ₽</div>
+                </div>
+              </div>
+
+              <div class="space-y-3 mb-8 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-stone-500 font-light">Товары ({{ shopStore.cartCount }})</span>
+                  <span class="font-medium text-charcoal">{{ shopStore.cart.subtotal }} ₽</span>
+                </div>
+                <div v-if="shopStore.cart.discount > 0" class="flex justify-between text-clay">
+                  <span class="font-light">Скидка</span>
+                  <span class="font-medium">- {{ shopStore.cart.discount }} ₽</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-stone-500 font-light">Доставка</span>
+                  <span class="font-medium text-charcoal">{{ shopStore.cart.delivery_cost > 0 ? `${shopStore.cart.delivery_cost} ₽` : 'Бесплатно' }}</span>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-end border-t border-sand pt-6 mb-8">
+                <span class="text-lg font-serif italic text-charcoal">К оплате</span>
+                <span class="text-3xl font-medium text-charcoal">{{ shopStore.cart.total }} ₽</span>
+              </div>
+
+              <div v-if="errorMessage" class="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-sm border border-red-100">
+                {{ errorMessage }}
+              </div>
+
+              <button type="submit" :disabled="isSubmitting" class="w-full py-4 bg-charcoal text-white hover:bg-clay transition-all duration-300 uppercase tracking-widest text-sm font-medium rounded-sm shadow-md flex justify-center items-center gap-2" :class="{ 'opacity-70 pointer-events-none': isSubmitting }">
+                <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span>{{ isSubmitting ? 'Оформляем...' : 'Подтвердить заказ' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </transition>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.checkout-layout {
-  margin-top: 22px;
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 20px;
-}
-
-.form-card,
-.summary-card,
-.empty {
-  padding: 22px;
-}
-
-.form-card h2,
-.summary-card h2 {
-  margin-top: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem;
-}
-
-.checkout-form {
-  display: grid;
-  gap: 10px;
-}
-
-.checkout-form label {
-  display: grid;
-  gap: 6px;
-  color: var(--text-soft);
-}
-
-.summary-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 14px;
-  margin-bottom: 8px;
-}
-
-.divider {
-  border-top: 1px solid var(--stroke);
-  margin: 12px 0;
-}
-
-.summary-line.total {
-  font-size: 1.04rem;
-}
-
-@media (max-width: 960px) {
-  .checkout-layout {
-    grid-template-columns: 1fr;
-  }
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(10px); }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-sand); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-clay); }
 </style>

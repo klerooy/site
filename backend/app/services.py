@@ -19,6 +19,31 @@ from .data import (
 )
 
 
+def get_admin_stats() -> dict[str, Any]:
+    valid_orders = [o for o in orders_demo if str(o.get("status")).lower() != "отменен"]
+    revenue = sum(float(o.get("total", 0)) for o in valid_orders)
+    return {
+        "revenue": format_price(revenue),
+        "ordersCount": len(orders_demo)
+    }
+
+def get_all_orders() -> list[dict[str, Any]]:
+    return orders_demo
+
+def update_order_status(order_id: str, new_status: str) -> dict[str, Any]:
+    for o in orders_demo:
+        if o["id"] == order_id:
+            o["status"] = new_status
+            return o
+    raise ValueError("Заказ не найден")
+
+def delete_product(product_id: int) -> bool:
+    for i in range(len(products) - 1, -1, -1):
+        if products[i].get("id") == product_id:
+            products.pop(i)
+            return True
+    return False
+
 def _product_index() -> dict[int, dict[str, Any]]:
     return {product["id"]: product for product in products}
 

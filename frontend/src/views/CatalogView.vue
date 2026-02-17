@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import ProductCard from '../components/ProductCard.vue'
 
 // --- СОСТОЯНИЕ ---
@@ -10,6 +11,9 @@ const isLoading = ref(true)
 const activeCategory = ref('Все')
 const activeSort = ref('popular')
 
+const route = useRoute()
+const router = useRouter()
+
 // --- ДАННЫЕ ДЛЯ ФИЛЬТРОВ ---
 const categories = ['Все', 'Акварель', 'Масло', 'Кисти', 'Холсты', 'Бумага']
 
@@ -19,6 +23,15 @@ const sortOptions = [
   { value: 'price_asc', label: 'Сначала дешевле' },
   { value: 'price_desc', label: 'Сначала дороже' }
 ]
+
+const syncCategoryFromRoute = () => {
+  const qCategory = String(route.query?.category || '').trim()
+  if (!qCategory) {
+    activeCategory.value = 'Все'
+    return
+  }
+  activeCategory.value = categories.includes(qCategory) ? qCategory : 'Все'
+}
 
 // Динамические параметры фильтрации (меняются от категории)
 const dynamicFilters = computed(() => {
@@ -71,7 +84,12 @@ const fetchProducts = async () => {
 
 // Загружаем при монтировании компонента
 onMounted(() => {
+  syncCategoryFromRoute()
   fetchProducts()
+})
+
+watch(() => route.query?.category, () => {
+  syncCategoryFromRoute()
 })
 
 // При изменении категории или сортировки - заново загружаем товары
@@ -79,10 +97,22 @@ watch([activeCategory, activeSort], () => {
   fetchProducts()
 })
 
+const setCategory = async (cat) => {
+  activeCategory.value = cat
+  const nextQuery = { ...route.query }
+  if (cat === 'Все') {
+    delete nextQuery.category
+  } else {
+    nextQuery.category = cat
+  }
+  await router.replace({ path: '/catalog', query: nextQuery })
+}
+
 // Сброс фильтров
 const resetFilters = () => {
   activeCategory.value = 'Все'
   activeSort.value = 'popular'
+  router.replace({ path: '/catalog', query: {} })
 }
 </script>
 
@@ -110,7 +140,7 @@ const resetFilters = () => {
             <ul class="space-y-2">
               <li v-for="cat in categories" :key="cat">
                 <button 
-                  @click="activeCategory = cat"
+                  @click="setCategory(cat)"
                   class="w-full text-left py-2 px-4 rounded-sm transition-all duration-300 uppercase tracking-widest text-sm font-medium"
                   :class="activeCategory === cat ? 'bg-charcoal text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-charcoal'"
                 >

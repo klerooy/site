@@ -12,10 +12,12 @@ const form = reactive({
 })
 
 const sent = ref('')
+const isSending = ref(false)
 
 async function submit() {
   sent.value = ''
   try {
+    isSending.value = true
     const response = await store.sendContact(form)
     sent.value = response.message
     form.name = ''
@@ -23,6 +25,8 @@ async function submit() {
     form.message = ''
   } catch {
     sent.value = ''
+  } finally {
+    isSending.value = false
   }
 }
 
@@ -32,100 +36,112 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="section">
-    <div class="container" v-if="store.contacts">
-      <h1 class="title">Контакты</h1>
-      <p class="subtitle">Заходите в магазин или напишите нам через форму обратной связи.</p>
+  <div class="bg-paper min-h-screen pb-24">
+    <div class="container mx-auto px-6 py-12 md:py-20">
 
-      <div class="contact-layout">
-        <article class="card contact-card">
-          <img :src="store.contacts.photo" alt="Фото магазина" class="shop-photo" />
-          <div class="contact-list">
-            <p><strong>Адрес:</strong> {{ store.contacts.address }}</p>
-            <p><strong>Телефон:</strong> {{ store.contacts.phone }}</p>
-            <p><strong>Email:</strong> {{ store.contacts.email }}</p>
-            <p><strong>Режим работы:</strong> {{ store.contacts.work_hours }}</p>
+      <nav class="mb-10 text-xs uppercase tracking-widest text-stone-500">
+        <router-link to="/" class="hover:text-clay transition-colors">Главная</router-link>
+        <span class="mx-3 text-sand">/</span>
+        <span class="text-charcoal">Контакты</span>
+      </nav>
+
+      <div class="mb-16 border-b border-sand pb-8">
+        <h1 class="text-4xl md:text-6xl font-serif italic text-charcoal">Контакты</h1>
+        <p class="text-stone-500 font-light mt-4 text-lg max-w-2xl">
+          Заходите в мастерскую или напишите нам — ответим в течение дня.
+        </p>
+      </div>
+
+      <div v-if="!store.contacts" class="text-center py-20 text-stone-500 font-serif italic text-2xl">
+        Загрузка контактов...
+      </div>
+
+      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+
+        <section class="lg:col-span-7 space-y-8">
+          <div class="bg-white border border-sand rounded-sm shadow-sm overflow-hidden">
+            <div class="aspect-[16/9] bg-stone-100 overflow-hidden">
+              <img :src="store.contacts.photo" alt="Фото магазина" class="w-full h-full object-cover" />
+            </div>
+
+            <div class="p-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div class="text-xs uppercase tracking-widest text-stone-500">Адрес</div>
+                  <div class="text-charcoal mt-2 leading-relaxed">{{ store.contacts.address }}</div>
+                </div>
+                <div>
+                  <div class="text-xs uppercase tracking-widest text-stone-500">Режим работы</div>
+                  <div class="text-charcoal mt-2 leading-relaxed">{{ store.contacts.work_hours }}</div>
+                </div>
+                <div>
+                  <div class="text-xs uppercase tracking-widest text-stone-500">Телефон</div>
+                  <a :href="`tel:${String(store.contacts.phone || '').replace(/\s/g, '')}`" class="text-charcoal mt-2 inline-block hover:text-clay transition-colors">
+                    {{ store.contacts.phone }}
+                  </a>
+                </div>
+                <div>
+                  <div class="text-xs uppercase tracking-widest text-stone-500">Email</div>
+                  <a :href="`mailto:${store.contacts.email}`" class="text-charcoal mt-2 inline-block hover:text-clay transition-colors">
+                    {{ store.contacts.email }}
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="map-wrap">
-            <iframe
-              :src="store.contacts.map_embed"
-              title="Карта магазина"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            />
+          <div class="bg-white border border-sand rounded-sm shadow-sm overflow-hidden">
+            <div class="px-8 py-6 border-b border-sand">
+              <h2 class="text-2xl font-serif text-charcoal">Как нас найти</h2>
+              <p class="text-stone-500 font-light mt-2">Постройте маршрут — вход со двора, рядом есть парковка.</p>
+            </div>
+            <div class="aspect-[16/10] bg-stone-100">
+              <iframe
+                :src="store.contacts.map_embed"
+                title="Карта магазина"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                class="w-full h-full border-0"
+              />
+            </div>
           </div>
-        </article>
+        </section>
 
-        <article class="card form-card">
-          <h2>Форма обратной связи</h2>
-          <form class="form-grid" @submit.prevent="submit">
-            <input v-model="form.name" class="input" type="text" placeholder="Ваше имя" required />
-            <input v-model="form.email" class="input" type="email" placeholder="Email" required />
-            <textarea
-              v-model="form.message"
-              class="textarea"
-              rows="6"
-              placeholder="Чем можем помочь?"
-              required
-            />
-            <button class="btn btn-primary" type="submit">Отправить</button>
-          </form>
+        <aside class="lg:col-span-5">
+          <div class="bg-white border border-sand rounded-sm shadow-sm overflow-hidden sticky top-28">
+            <div class="px-8 py-6 border-b border-sand">
+              <h2 class="text-2xl font-serif text-charcoal">Написать нам</h2>
+              <p class="text-stone-500 font-light mt-2">Расскажите, что нужно — подберём материалы и ответим на вопросы.</p>
+            </div>
 
-          <p v-if="sent" class="success">{{ sent }}</p>
-          <p v-if="store.error" class="notice">{{ store.error }}</p>
-        </article>
+            <form class="p-8 space-y-5" @submit.prevent="submit">
+              <div>
+                <label class="text-xs uppercase tracking-widest text-stone-500">Имя</label>
+                <input v-model="form.name" type="text" required class="mt-2 w-full bg-transparent border border-sand rounded-sm py-2.5 px-3 focus:outline-none focus:border-clay text-sm" />
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-widest text-stone-500">Email</label>
+                <input v-model="form.email" type="email" required class="mt-2 w-full bg-transparent border border-sand rounded-sm py-2.5 px-3 focus:outline-none focus:border-clay text-sm" />
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-widest text-stone-500">Сообщение</label>
+                <textarea v-model="form.message" rows="6" required class="mt-2 w-full bg-transparent border border-sand rounded-sm py-2.5 px-3 focus:outline-none focus:border-clay text-sm"></textarea>
+              </div>
+
+              <button type="submit" :disabled="isSending" class="w-full px-6 py-3 bg-charcoal text-white hover:bg-clay transition-colors uppercase tracking-widest text-xs font-medium rounded-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                {{ isSending ? 'Отправка...' : 'Отправить' }}
+              </button>
+
+              <div v-if="sent" class="border border-green-200 bg-green-50 text-green-700 px-4 py-3 rounded-sm text-sm">
+                {{ sent }}
+              </div>
+              <div v-if="store.error" class="border border-red-200 bg-red-50 text-red-700 px-4 py-3 rounded-sm text-sm">
+                {{ store.error }}
+              </div>
+            </form>
+          </div>
+        </aside>
       </div>
     </div>
-  </section>
+  </div>
 </template>
-
-<style scoped>
-.contact-layout {
-  margin-top: 24px;
-  display: grid;
-  gap: 22px;
-  grid-template-columns: 1.2fr 1fr;
-}
-
-.contact-card,
-.form-card {
-  padding: 22px;
-}
-
-.shop-photo {
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-  border-radius: 14px;
-}
-
-.contact-list {
-  margin: 14px 0;
-  color: var(--text-soft);
-}
-
-.map-wrap iframe {
-  width: 100%;
-  height: 260px;
-  border: 0;
-  border-radius: 14px;
-}
-
-.form-card h2 {
-  margin: 0 0 14px;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem;
-}
-
-.form-grid {
-  display: grid;
-  gap: 10px;
-}
-
-@media (max-width: 960px) {
-  .contact-layout {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
