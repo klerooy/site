@@ -14,111 +14,55 @@ function subscribe() {
 </script>
 
 <template>
-  <footer class="site-footer section-tight">
-    <div class="container footer-card card">
-      <div>
-        <h3 class="footer-title">Artistic Shop</h3>
-        <p class="footer-text">Материалы, которые превращают идею в произведение.</p>
-      </div>
+  <footer class="bg-paper-dark pt-20 pb-10 border-t border-sand">
+      <div class="container mx-auto px-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
+          
+          <div class="flex flex-col justify-between">
+            <div>
+              <h3 class="font-serif italic text-3xl mb-6">art.shop</h3>
+              <p class="text-ink-light font-light max-w-sm leading-relaxed">
+                Вдохновение в каждом инструменте. Мы создаем пространство, где творчество становится образом жизни.
+              </p>
+            </div>
+            <div class="h-px w-24 bg-clay mt-10 md:mt-0"></div>
+          </div>
 
-      <div>
-        <h4 class="footer-sub">Подписка на новости</h4>
-        <form class="footer-form" @submit.prevent="subscribe">
-          <input
-            v-model="email"
-            class="input"
-            type="email"
-            placeholder="Ваш email"
-            required
-          />
-          <button class="btn btn-primary" type="submit">Подписаться</button>
-        </form>
-        <p v-if="done" class="success">Спасибо! Вы подписаны.</p>
-      </div>
+          <div>
+            <h4 class="font-serif text-xl mb-6">Оставайтесь на связи</h4>
+            <p class="text-sm text-ink-light mb-4">Подпишитесь на новости и получите скидку 10% на первый заказ.</p>
+            
+            <form class="flex gap-4 mb-10 max-w-md">
+              <input 
+                type="email" 
+                placeholder="Ваш email" 
+                class="flex-1 bg-white border border-sand px-4 py-3 text-sm focus:outline-none focus:border-clay transition-colors rounded-sm placeholder:font-light"
+              >
+              <button 
+                type="submit" 
+                class="px-6 py-3 bg-ink text-white text-sm uppercase tracking-wider hover:bg-clay transition-colors rounded-sm"
+              >
+                Подписаться
+              </button>
+            </form>
 
-      <div>
-        <h4 class="footer-sub">Социальные сети</h4>
-        <div class="socials">
-          <a href="#" aria-label="Telegram">Telegram</a>
-          <a href="#" aria-label="VK">VK</a>
-          <a href="#" aria-label="Pinterest">Pinterest</a>
+            <div class="flex gap-6">
+              <a href="#" class="text-ink-light hover:text-clay transition-colors text-sm uppercase tracking-widest border-b border-transparent hover:border-clay pb-0.5">Telegram</a>
+              <a href="#" class="text-ink-light hover:text-clay transition-colors text-sm uppercase tracking-widest border-b border-transparent hover:border-clay pb-0.5">VKontakte</a>
+              <a href="#" class="text-ink-light hover:text-clay transition-colors text-sm uppercase tracking-widest border-b border-transparent hover:border-clay pb-0.5">Pinterest</a>
+            </div>
+          </div>
         </div>
+
+        <div class="border-t border-sand pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-ink-light font-light uppercase tracking-widest">
+          <p>&copy; 2026 art.shop. Все права защищены.</p>
+          <div class="flex gap-8 mt-4 md:mt-0">
+            <RouterLink to="/privacy" class="hover:text-clay transition-colors">Политика конфиденциальности</RouterLink>
+            <RouterLink to="/offer" class="hover:text-clay transition-colors">Оферта</RouterLink>
+          </div>
+        </div>
+
       </div>
-    </div>
-
-    <div class="container footer-bottom">
-      <small>© 2026 Artistic Shop</small>
-      <a href="#">Политика конфиденциальности</a>
-    </div>
-  </footer>
+    </footer>
 </template>
-
-<style scoped>
-.site-footer {
-  padding-bottom: 36px;
-}
-
-.footer-card {
-  padding: 34px;
-  display: grid;
-  grid-template-columns: 1.2fr 1.4fr 1fr;
-  gap: 28px;
-}
-
-.footer-title {
-  margin: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem;
-}
-
-.footer-text {
-  color: var(--text-soft);
-}
-
-.footer-sub {
-  margin: 0 0 10px;
-  font-size: 1rem;
-}
-
-.footer-form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.socials {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.socials a {
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: var(--text-soft);
-}
-
-.footer-bottom {
-  margin-top: 16px;
-  display: flex;
-  justify-content: space-between;
-  color: var(--text-soft);
-}
-
-@media (max-width: 920px) {
-  .footer-card {
-    grid-template-columns: 1fr;
-    padding: 26px;
-  }
-
-  .footer-form {
-    grid-template-columns: 1fr;
-  }
-
-  .footer-bottom {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-</style>

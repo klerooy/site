@@ -222,6 +222,7 @@ def get_search_suggestions(query: str) -> list[dict[str, Any]]:
                     "brand": item.get("brand"),
                     "color": item.get("color"),
                     "slug": item.get("slug", ""),
+                    "image": item.get("image", ""),
                 }
             )
 

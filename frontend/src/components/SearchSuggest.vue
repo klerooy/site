@@ -1,168 +1,120 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { useShopStore } from '../stores/shop'
-
+const emit = defineEmits(['close'])
 const router = useRouter()
-const store = useShopStore()
-
 const query = ref('')
-const open = ref(false)
-const rootRef = ref(null)
-let debounceTimer
+const suggestions = ref([])
+const isLoading = ref(false)
+let debounceTimer = null
 
-watch(query, (value) => {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    store.fetchSuggestions(value)
-    open.value = value.trim().length >= 2
-  }, 240)
-})
-
-function closeIfOutside(event) {
-  if (rootRef.value && !rootRef.value.contains(event.target)) {
-    open.value = false
-  }
-}
-
-function submitSearch() {
-  if (!query.value.trim()) {
+// Функция для получения подсказок (ИСПРАВЛЕН URL)
+const fetchSuggestions = async (val) => {
+  if (!val || val.trim().length < 2) {
+    suggestions.value = []
     return
   }
-
-  router.push({ name: 'catalog', query: { query: query.value.trim() } })
-  open.value = false
+  isLoading.value = true
+  try {
+    // ИСПРАВЛЕНИЕ: Используем правильный эндпоинт /api/search/suggest
+    const res = await fetch(`/api/search/suggest?q=${encodeURIComponent(val)}`)
+    if (res.ok) {
+      suggestions.value = await res.json()
+    } else {
+      suggestions.value = []
+    }
+  } catch (e) {
+    console.error('Ошибка поиска:', e)
+    suggestions.value = []
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function chooseSuggestion(item) {
-  router.push({ name: 'product', params: { id: item.id } })
-  query.value = ''
-  open.value = false
-}
-
-onMounted(() => {
-  document.addEventListener('click', closeIfOutside)
-})
-
-onBeforeUnmount(() => {
+// Задержка ввода, чтобы не отправлять запрос на каждую букву
+watch(query, (newVal) => {
   clearTimeout(debounceTimer)
-  document.removeEventListener('click', closeIfOutside)
+  debounceTimer = setTimeout(() => {
+    fetchSuggestions(newVal)
+  }, 300)
 })
+
+// Переход к товару при клике на результат
+const handleSelect = (item) => {
+  router.push(`/product/${item.id}`)
+  emit('close')
+}
+
+// Переход при нажатии Enter (открываем первый товар, если он есть)
+const handleSubmit = () => {
+  if (suggestions.value.length > 0) {
+    handleSelect(suggestions.value[0])
+  }
+}
 </script>
 
 <template>
-  <div ref="rootRef" class="search-box">
-    <form class="search-form" @submit.prevent="submitSearch">
-      <label class="visually-hidden" for="site-search">Поиск по каталогу</label>
+  <div class="w-full max-w-3xl mx-auto">
+    <h2 class="hidden md:block text-charcoal font-serif italic text-2xl mb-6 text-center">Что вы ищете сегодня?</h2>
+    
+    <form @submit.prevent="handleSubmit" class="relative group">
+
       <input
-        id="site-search"
         v-model="query"
-        class="search-input"
         type="text"
-        placeholder="Поиск: бренд, цвет, название"
-        autocomplete="off"
-        @focus="open = query.trim().length >= 2"
+        placeholder="Название материала, цвет или бренд..."
+        class="w-full bg-transparent border-b-2 border-stone-200 py-4 pl-10 pr-4 text-xl md:text-2xl font-serif text-charcoal placeholder:text-stone-300 placeholder:font-sans placeholder:text-lg placeholder:font-light focus:outline-none focus:border-clay transition-all duration-300"
+        autofocus
       />
-      <button type="submit" class="search-submit" aria-label="Искать">⌕</button>
+       
+      <div v-if="isLoading" class="absolute right-0 top-1/2 -translate-y-1/2 text-clay">
+        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
     </form>
 
-    <div v-if="open" class="search-dropdown card">
-      <p v-if="store.suggestions.length === 0" class="search-empty">Ничего не найдено</p>
-      <button
-        v-for="item in store.suggestions"
-        :key="item.id"
-        type="button"
-        class="search-item"
-        @click="chooseSuggestion(item)"
-      >
-        <span>{{ item.name }}</span>
-        <small>{{ item.brand }} · {{ item.color }}</small>
-      </button>
+    <transition name="fade">
+      <ul v-if="suggestions.length > 0" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <li v-for="item in suggestions" :key="item.id">
+          <button 
+            @click="handleSelect(item)"
+            class="w-full text-left p-4 flex items-center gap-4 rounded-sm border border-transparent hover:border-sand hover:bg-white transition-all group"
+          >
+            <div class="w-12 h-12 bg-stone-100 rounded-sm flex-shrink-0 overflow-hidden border border-sand group-hover:border-clay/30 transition-all relative">
+              <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
+              <div v-else class="w-full h-full flex justify-center items-center text-stone-300 text-xs">Нет</div>
+            </div>
+            
+            <div class="overflow-hidden">
+                <div class="font-serif text-lg text-charcoal group-hover:text-clay transition-colors leading-tight mb-1 truncate">
+                  {{ item.name }}
+                </div>
+                <div class="text-xs uppercase tracking-widest text-stone-400 flex gap-2 truncate">
+                    <span v-if="item.brand">{{ item.brand }}</span>
+                    <span v-if="item.brand && item.color">•</span>
+                    <span v-if="item.color">{{ item.color }}</span>
+                </div>
+            </div>
+          </button>
+        </li>
+      </ul>
+    </transition>
+    
+    <div v-if="query && query.length >= 2 && suggestions.length === 0 && !isLoading" class="mt-8 text-center text-stone-500 font-light">
+        К сожалению, ничего не найдено по запросу "{{ query }}".
     </div>
   </div>
 </template>
 
 <style scoped>
-.search-box {
-  position: relative;
-  width: min(430px, 100%);
-}
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration { display: none; }
 
-.search-form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.search-input {
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--text);
-  font: inherit;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: rgba(126, 103, 83, 0.72);
-}
-
-.search-submit {
-  width: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--text-soft);
-  font-size: 1.05rem;
-  cursor: pointer;
-  transition: transform 0.25s ease;
-}
-
-.search-submit:hover {
-  transform: translateY(-1px);
-}
-
-.search-dropdown {
-  position: absolute;
-  z-index: 50;
-  top: calc(100% + 10px);
-  left: 0;
-  width: 100%;
-  border-radius: 14px;
-  padding: 8px;
-}
-
-.search-item {
-  width: 100%;
-  border: 0;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: transparent;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.search-item:hover {
-  background: rgba(201, 159, 150, 0.18);
-}
-
-.search-item small {
-  color: var(--text-soft);
-}
-
-.search-empty {
-  margin: 6px;
-  color: var(--text-soft);
-}
-
-@media (max-width: 760px) {
-  .search-box {
-    width: 100%;
-  }
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

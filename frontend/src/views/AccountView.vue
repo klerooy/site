@@ -133,9 +133,6 @@ onMounted(async () => {
             <aside class="lg:col-span-3 flex flex-col gap-2 sticky top-28">
               <button @click="activeTab = 'orders'" class="text-left px-5 py-3 rounded-sm transition-colors text-sm uppercase tracking-widest font-medium" :class="activeTab === 'orders' ? 'bg-charcoal text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-charcoal'">История заказов</button>
               <button @click="activeTab = 'favorites'" class="text-left px-5 py-3 rounded-sm transition-colors text-sm uppercase tracking-widest font-medium" :class="activeTab === 'favorites' ? 'bg-charcoal text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-charcoal'">Избранное</button>
-                <router-link v-if="shopStore.isAdmin" to="/admin" class="inline-block px-8 py-3 bg-clay text-white uppercase tracking-widest text-xs font-medium rounded-sm hover:bg-charcoal transition-colors">
-                  Перейти в панель управления
-                </router-link>
               <button @click="handleLogout" class="text-left px-5 py-3 rounded-sm transition-colors text-sm uppercase tracking-widest font-medium text-red-400 hover:bg-red-50 hover:text-red-500 mt-6">Выйти</button>
             </aside>
 

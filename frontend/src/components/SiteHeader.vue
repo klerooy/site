@@ -1,214 +1,143 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-
 import { useShopStore } from '../stores/shop'
 import SearchSuggest from './SearchSuggest.vue'
 
+const cartStore = useShopStore()
 const route = useRoute()
-const store = useShopStore()
+
+const searchOpen = ref(false)
 const menuOpen = ref(false)
+const headerRef = ref(null)
 
-const hasCartItems = computed(() => store.cartCount > 0)
+const toggleSearch = () => {
+  searchOpen.value = !searchOpen.value
+  if (searchOpen.value) {
+    menuOpen.value = false
+    document.body.style.overflow = window.innerWidth < 768 ? 'hidden' : ''
+  } else {
+    document.body.style.overflow = ''
+  }
+}
 
-const navItems = [
-  { to: '/catalog', label: 'Каталог' },
-  { to: '/specials', label: 'Наборы' },
-  { to: '/blog', label: 'Блог' },
-  { to: '/contacts', label: 'Контакты' }
-]
+const closeSearch = () => {
+  searchOpen.value = false
+  document.body.style.overflow = ''
+}
 
-onMounted(async () => {
-  await store.fetchCart()
+const closeIfOutside = (e) => {
+  if (searchOpen.value && headerRef.value && !headerRef.value.contains(e.target) && window.innerWidth >= 768) {
+    closeSearch()
+  }
+}
+
+watch(route, () => {
+  closeSearch()
+  menuOpen.value = false
+})
+
+onMounted(() => {
+  document.addEventListener('click', closeIfOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeIfOutside)
+  document.body.style.overflow = ''
 })
 </script>
 
 <template>
-  <header class="site-header">
-    <div class="container header-inner">
-      <RouterLink to="/" class="logo-wrap">
-        <span class="logo-mark">A</span>
-        <span class="logo-text">Artistic Shop</span>
+  <header ref="headerRef" class="sticky top-0 z-50 bg-paper/95 backdrop-blur-md border-b border-stone-200/50 shadow-sm relative">
+    <nav class="container mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <RouterLink to="/" class="text-3xl font-serif italic font-bold tracking-tighter flex-shrink-0 relative z-10">
+        art<span class="text-clay">.</span>shop
       </RouterLink>
 
-      <button class="menu-btn" type="button" @click="menuOpen = !menuOpen">
-        Меню
-      </button>
-
-      <nav class="header-nav" :class="{ open: menuOpen }">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="header-link"
-          :class="{ active: route.path.startsWith(item.to) }"
-          @click="menuOpen = false"
-        >
-          {{ item.label }}
-        </RouterLink>
-      </nav>
-
-      <div class="header-tools">
-        <SearchSuggest class="header-search" />
-
-        <RouterLink to="/account" class="icon-btn" aria-label="Личный кабинет">👤</RouterLink>
-
-        <RouterLink to="/cart" class="icon-btn cart-link" aria-label="Корзина">
-          🛒
-          <span v-if="hasCartItems" class="cart-dot" />
+      <div class="hidden md:flex flex-1 justify-center gap-8 text-sm font-medium tracking-widest uppercase px-4 relative z-10">
+        <RouterLink to="/catalog" class="hover:text-clay transition-colors whitespace-nowrap">Каталог</RouterLink>
+        <RouterLink to="/blog" class="hover:text-clay transition-colors whitespace-nowrap">Блог</RouterLink>
+        <RouterLink to="/contacts" class="hover:text-clay transition-colors whitespace-nowrap">Контакты</RouterLink>
+        <RouterLink v-if="cartStore.isAdmin" to="/admin" class="text-clay font-bold hover:text-charcoal transition-colors whitespace-nowrap border-b-2 border-clay/30">
+          Админ
         </RouterLink>
       </div>
-    </div>
+
+      <div class="flex items-center justify-end gap-4 md:gap-6 flex-shrink-0 relative z-10">
+        
+        <button 
+          type="button" 
+          @click.stop="toggleSearch" 
+          class="group flex items-center gap-2 hover:text-clay transition-colors p-1"
+          aria-label="Поиск"
+        >
+          <span class="sr-only">Поиск</span>
+          <svg class="w-5 h-5 text-charcoal group-hover:text-clay transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+          </svg>
+          <span class="hidden md:block text-sm font-medium uppercase tracking-widest text-stone-500 group-hover:text-clay transition-colors">Поиск</span>
+        </button>
+
+        <RouterLink to="/cart" class="text-charcoal hover:text-clay transition-transform hover:scale-110 relative p-1 flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <transition name="scale">
+            <span v-if="cartStore.cartCount > 0" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-clay rounded-full border border-paper"></span>
+          </transition>
+        </RouterLink>
+
+        <RouterLink to="/account" class="text-charcoal hover:text-clay transition-transform hover:scale-110 p-1 flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        </RouterLink>
+
+        <button @click="menuOpen = !menuOpen" class="md:hidden text-charcoal hover:text-clay transition-colors ml-2 p-1 flex-shrink-0">
+          <svg v-if="!menuOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          <svg v-else class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+    </nav>
+
+    <transition name="search-slide">
+      <div v-if="searchOpen" class="absolute left-0 top-full w-full bg-paper border-b border-sand shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] z-0">
+        <div class="container mx-auto px-6 py-8 md:py-10 relative">
+           <button class="md:hidden absolute top-4 right-4 text-stone-400 hover:text-charcoal p-2" @click="closeSearch">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+           </button>
+           <SearchSuggest @close="closeSearch" />
+        </div>
+      </div>
+    </transition>
+
+    <transition name="slide-down">
+      <div v-if="menuOpen" class="md:hidden bg-paper/95 backdrop-blur-md border-b border-sand px-6 py-8 absolute w-full left-0 top-full shadow-lg z-40">
+        <nav class="flex flex-col gap-6 text-sm uppercase tracking-widest font-medium text-center">
+          <RouterLink to="/catalog" class="text-stone-500 hover:text-clay transition-colors py-2" @click="menuOpen = false">Каталог</RouterLink>
+          <RouterLink to="/blog" class="text-stone-500 hover:text-clay transition-colors py-2" @click="menuOpen = false">Блог</RouterLink>
+          <RouterLink to="/contacts" class="text-stone-500 hover:text-clay transition-colors py-2" @click="menuOpen = false">Контакты</RouterLink>
+          <RouterLink v-if="cartStore.isAdmin" to="/admin" class="text-clay font-bold py-2 border-b border-clay/20 inline-block mx-auto" @click="menuOpen = false">Панель управления</RouterLink>
+        </nav>
+      </div>
+    </transition>
   </header>
 </template>
 
 <style scoped>
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 1px solid var(--stroke);
-  background: rgba(250, 244, 235, 0.9);
-  backdrop-filter: blur(7px);
+.search-slide-enter-active,
+.search-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 500px;
+  opacity: 1;
 }
 
-.header-inner {
-  min-height: 74px;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: auto auto 1fr auto;
-  align-items: center;
+.search-slide-enter-from,
+.search-slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
-.logo-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.03em;
-}
-
-.logo-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(145deg, var(--accent-blue), var(--accent-lavender));
-  color: #fff;
-  font-weight: 700;
-}
-
-.logo-text {
-  font-size: 1.5rem;
-}
-
-.menu-btn {
-  display: none;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.64);
-  border-radius: 999px;
-  padding: 7px 12px;
-  font: inherit;
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.header-link {
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  letter-spacing: 0.02em;
-  transition: color 0.25s ease;
-}
-
-.header-link:hover,
-.header-link.active {
-  color: var(--text);
-}
-
-.header-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-search {
-  width: 330px;
-}
-
-.icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.72);
-  transition: transform 0.25s ease;
-}
-
-.icon-btn:hover {
-  transform: translateY(-2px);
-}
-
-.cart-link {
-  position: relative;
-}
-
-.cart-dot {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent-rose);
-}
-
-@media (max-width: 1120px) {
-  .header-inner {
-    grid-template-columns: auto auto 1fr;
-  }
-
-  .header-search {
-    width: 260px;
-  }
-}
-
-@media (max-width: 960px) {
-  .menu-btn {
-    display: inline-flex;
-    justify-self: start;
-  }
-
-  .header-nav {
-    position: absolute;
-    top: 74px;
-    left: 0;
-    right: 0;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--stroke);
-    background: rgba(250, 244, 235, 0.97);
-    display: none;
-    flex-wrap: wrap;
-  }
-
-  .header-nav.open {
-    display: flex;
-  }
-
-  .header-tools {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .header-search {
-    flex: 1;
-    width: 100%;
-  }
-}
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.3s ease-in-out; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-10px); }
+.scale-enter-active, .scale-leave-active { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0); }
 </style>
