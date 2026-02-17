@@ -13,7 +13,7 @@ const productsQuery = ref('')
 const blogQuery = ref('')
 
 const isProductModalOpen = ref(false)
-const productModalMode = ref('create') // create | edit
+const productModalMode = ref('create')
 const isSavingProduct = ref(false)
 const productSaveError = ref('')
 
@@ -28,7 +28,7 @@ const productDraft = ref({
 })
 
 const isBlogModalOpen = ref(false)
-const blogModalMode = ref('create') // create | edit
+const blogModalMode = ref('create')
 const isSavingBlogPost = ref(false)
 const blogSaveError = ref('')
 
@@ -79,7 +79,6 @@ const fetchOrdersAndStats = async () => {
   }
 }
 
-// Загрузка всех реальных данных с бэкенда
 const fetchAdminData = async () => {
   isLoading.value = true
   try {
@@ -117,7 +116,6 @@ watch(activeTab, (tab) => {
   }
 })
 
-// Обновление статуса заказа
 const updateOrderStatus = async (orderId, newStatus) => {
   try {
     await fetch(`/api/admin/orders/${orderId}/status`, {
@@ -125,7 +123,6 @@ const updateOrderStatus = async (orderId, newStatus) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
     })
-    // Перезагружаем статистику (если отменили заказ, выручка должна упасть)
     const statsRes = await fetch('/api/admin/stats')
     if (statsRes.ok) stats.value = await statsRes.json()
   } catch (error) {
@@ -133,7 +130,6 @@ const updateOrderStatus = async (orderId, newStatus) => {
   }
 }
 
-// Удаление товара
 const deleteProduct = async (productId) => {
   if (!confirm('Вы уверены, что хотите удалить этот материал навсегда?')) return
 

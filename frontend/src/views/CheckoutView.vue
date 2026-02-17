@@ -30,7 +30,6 @@ onMounted(async () => {
   if (shopStore.cartCount === 0) {
     router.push('/catalog')
   } else {
-    // Подставляем имя, если пользователь авторизован
     if (shopStore.user) {
       form.value.fullName = shopStore.user.name
     }
@@ -67,7 +66,6 @@ const submitOrder = async () => {
       const err = await response.json()
       let errMsg = 'Произошла ошибка при оформлении заказа.'
       
-      // Расшифровываем Pydantic ошибку (ту самую [object Object])
       if (err.detail) {
         if (Array.isArray(err.detail)) {
           errMsg = err.detail.map(e => {

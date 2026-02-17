@@ -3,18 +3,15 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProductCard from '../components/ProductCard.vue'
 
-// --- СОСТОЯНИЕ ---
 const products = ref([])
 const isLoading = ref(true)
 
-// Активные фильтры
 const activeCategory = ref('Все')
 const activeSort = ref('popular')
 
 const route = useRoute()
 const router = useRouter()
 
-// --- ДАННЫЕ ДЛЯ ФИЛЬТРОВ ---
 const categories = ['Все', 'Акварель', 'Масло', 'Кисти', 'Холсты', 'Бумага']
 
 const sortOptions = [
@@ -33,7 +30,6 @@ const syncCategoryFromRoute = () => {
   activeCategory.value = categories.includes(qCategory) ? qCategory : 'Все'
 }
 
-// Динамические параметры фильтрации (меняются от категории)
 const dynamicFilters = computed(() => {
   if (activeCategory.value === 'Акварель' || activeCategory.value === 'Масло') {
     return [
@@ -53,10 +49,9 @@ const dynamicFilters = computed(() => {
       { name: 'Плотность', options: ['200 г/м²', '300 г/м²'] }
     ]
   }
-  return [] // Для остальных или "Все" не показываем специфичные фильтры
+  return []
 })
 
-// --- ЗАГРУЗКА ДАННЫХ ---
 const fetchProducts = async () => {
   isLoading.value = true
   try {
@@ -69,7 +64,6 @@ const fetchProducts = async () => {
     const res = await fetch(`/api/products?${params.toString()}`)
     if (res.ok) {
       const data = await res.json()
-      // ИСПРАВЛЕНИЕ: берем массив из ключа items
       products.value = data.items ? data.items : data 
     } else {
       products.value = []
@@ -82,7 +76,6 @@ const fetchProducts = async () => {
   }
 }
 
-// Загружаем при монтировании компонента
 onMounted(() => {
   syncCategoryFromRoute()
   fetchProducts()
@@ -92,7 +85,6 @@ watch(() => route.query?.category, () => {
   syncCategoryFromRoute()
 })
 
-// При изменении категории или сортировки - заново загружаем товары
 watch([activeCategory, activeSort], () => {
   fetchProducts()
 })
@@ -108,7 +100,6 @@ const setCategory = async (cat) => {
   await router.replace({ path: '/catalog', query: nextQuery })
 }
 
-// Сброс фильтров
 const resetFilters = () => {
   activeCategory.value = 'Все'
   activeSort.value = 'popular'
@@ -221,7 +212,6 @@ const resetFilters = () => {
 </template>
 
 <style scoped>
-/* Анимация для появления/исчезновения блоков динамических фильтров */
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.4s ease;

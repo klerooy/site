@@ -7,14 +7,12 @@ const isLoading = ref(true)
 const promoInput = ref('')
 const isUpdating = ref(false)
 
-// Загрузка актуальной корзины при открытии страницы
 onMounted(async () => {
   isLoading.value = true
   await shopStore.fetchCart()
   isLoading.value = false
 })
 
-// Управление количеством
 const updateQty = async (productId, currentQty, delta) => {
   const newQty = currentQty + delta
   if (newQty < 1) return
@@ -24,28 +22,25 @@ const updateQty = async (productId, currentQty, delta) => {
   isUpdating.value = false
 }
 
-// Удаление товара
 const removeItem = async (productId) => {
   isUpdating.value = true
   await shopStore.removeCartItem(productId)
   isUpdating.value = false
 }
 
-// Выбор способа доставки
 const changeDelivery = async (method) => {
   isUpdating.value = true
   await shopStore.setDeliveryMethod(method)
   isUpdating.value = false
 }
 
-// Применение промокода
 const handleApplyPromo = async () => {
   if (!promoInput.value.trim()) return
   
   isUpdating.value = true
   try {
     await shopStore.applyPromo(promoInput.value)
-    promoInput.value = '' // Очищаем поле после успешного применения
+    promoInput.value = ''
   } catch (error) {
     alert('Промокод недействителен или устарел.')
   } finally {
@@ -53,7 +48,6 @@ const handleApplyPromo = async () => {
   }
 }
 
-// Отмена промокода
 const handleRemovePromo = async () => {
   isUpdating.value = true
   await shopStore.clearPromo()

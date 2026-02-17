@@ -21,9 +21,9 @@ services:
       container_name: artistic-frontend
       restart: always
       ports:
-        - "5173:5173" # Порт Vite
+        - "5173:5173"
       volumes:
-        - ./frontend:/app # <-- ЭТО САМОЕ ВАЖНОЕ: пробрасываем ваши файлы внутрь
-        - /app/node_modules # Исключаем node_modules, чтобы использовать те, что внутри контейнера
+        - ./frontend:/app
+        - /app/node_modules
       environment:
-        - CHOKIDAR_USEPOLLING=true # Помогает отслеживать изменения файлов
+        - CHOKIDAR_USEPOLLING=true

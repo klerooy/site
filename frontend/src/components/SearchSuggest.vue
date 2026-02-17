@@ -9,7 +9,6 @@ const suggestions = ref([])
 const isLoading = ref(false)
 let debounceTimer = null
 
-// Функция для получения подсказок (ИСПРАВЛЕН URL)
 const fetchSuggestions = async (val) => {
   if (!val || val.trim().length < 2) {
     suggestions.value = []
@@ -17,7 +16,6 @@ const fetchSuggestions = async (val) => {
   }
   isLoading.value = true
   try {
-    // ИСПРАВЛЕНИЕ: Используем правильный эндпоинт /api/search/suggest
     const res = await fetch(`/api/search/suggest?q=${encodeURIComponent(val)}`)
     if (res.ok) {
       suggestions.value = await res.json()
@@ -32,7 +30,6 @@ const fetchSuggestions = async (val) => {
   }
 }
 
-// Задержка ввода, чтобы не отправлять запрос на каждую букву
 watch(query, (newVal) => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
@@ -40,13 +37,11 @@ watch(query, (newVal) => {
   }, 300)
 })
 
-// Переход к товару при клике на результат
 const handleSelect = (item) => {
   router.push(`/product/${item.id}`)
   emit('close')
 }
 
-// Переход при нажатии Enter (открываем первый товар, если он есть)
 const handleSubmit = () => {
   if (suggestions.value.length > 0) {
     handleSelect(suggestions.value[0])

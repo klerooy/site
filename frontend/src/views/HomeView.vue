@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import HeroSlider from '../components/HeroSlider.vue'
 import ProductCard from '../components/ProductCard.vue'
-// Импортируем функцию API
 import { getPopularProducts } from '../api/client.js'
 
 const categories = [
@@ -36,10 +35,8 @@ const categories = [
   }
 ]
 
-// Инициализируем пустым массивом
 const popularProducts = ref([])
 
-// Загружаем данные при монтировании компонента
 onMounted(async () => {
   popularProducts.value = await getPopularProducts()
 })

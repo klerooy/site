@@ -5,19 +5,16 @@ const currentSlide = ref(0)
 
 const slides = [
   {
-    // Картинка: Художественная студия, свет
     image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1920&auto=format&fit=crop',
     title: 'Искусство начинается здесь',
     subtitle: 'Вдохновение в каждом мазке'
   },
   {
-    // Картинка: Палитра красок крупным планом
     image: 'https://images.unsplash.com/photo-1520420097861-e4959843b682?q=80&w=1920&auto=format&fit=crop',
     title: 'Палитра вашей души',
     subtitle: 'Краски лучших мировых брендов'
   },
   {
-    // Картинка: Руки художника, кисти (замена нерабочей)
     image: 'https://images.unsplash.com/photo-1515462277126-2dd0c162007a?q=80&w=1920&auto=format&fit=crop',
     title: 'Творите без границ',
     subtitle: 'Кисти, холсты и бумага премиум класса'

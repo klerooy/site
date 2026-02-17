@@ -12,15 +12,11 @@ const props = defineProps({
 const shopStore = useShopStore()
 const showToast = ref(false)
 
-// Асинхронная функция добавления в корзину
 const handleAddToCart = async () => {
-  // 1. Ждем ответа от бэкенда
   await shopStore.addToCart(props.product.id, 1)
   
-  // 2. Показываем всплывашку
   showToast.value = true
   
-  // 3. Скрываем через 3 секунды
   setTimeout(() => {
     showToast.value = false
   }, 3000)
@@ -74,7 +70,6 @@ const handleAddToCart = async () => {
 </template>
 
 <style scoped>
-/* Анимация для уведомления */
 .toast-enter-active, .toast-leave-active {
   transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }

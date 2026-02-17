@@ -37,12 +37,10 @@ onMounted(() => {
   fetchBlog()
 })
 
-// Главный пост (всегда берем первый с флагом featured)
 const featuredPost = computed(() => {
   return allPosts.value.find(post => post.featured) || allPosts.value[0]
 })
 
-// Остальные посты, отфильтрованные по категории
 const filteredPosts = computed(() => {
   if (!featuredPost.value) return []
 
@@ -163,7 +161,6 @@ const filteredPosts = computed(() => {
 </template>
 
 <style scoped>
-/* Плавное исчезновение и появление карточек при фильтрации */
 .fade-move,
 .fade-enter-active,
 .fade-leave-active {
@@ -175,6 +172,6 @@ const filteredPosts = computed(() => {
   transform: translateY(20px);
 }
 .fade-leave-active {
-  position: absolute; /* Чтобы сетка плавно сжималась, а не "прыгала" */
+  position: absolute;
 }
 </style>
