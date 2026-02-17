@@ -1,293 +1,155 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import ProductCard from '../components/ProductCard.vue'
-import { useShopStore } from '../stores/shop'
 
-const store = useShopStore()
 const route = useRoute()
-const qty = ref(1)
-const selectedImage = ref('')
+const product = ref(null)
+const activePhoto = ref(0)
+const isLoading = ref(true)
 
-const product = computed(() => store.currentProduct)
-const techEntries = computed(() => Object.entries(product.value?.technical || {}))
-
-async function loadProduct() {
-  await store.fetchProduct(route.params.id)
-  qty.value = 1
-  selectedImage.value = product.value?.images?.[0] || ''
-}
-
-function changeImage(url) {
-  selectedImage.value = url
-}
-
-function addToCart() {
-  if (product.value) {
-    store.addToCart(product.value.id, qty.value)
-  }
-}
-
-onMounted(loadProduct)
-
-watch(
-  () => route.params.id,
-  () => {
-    loadProduct()
-  }
-)
+// Имитация загрузки детальных данных о товаре
+onMounted(async () => {
+  // В реальности здесь будет fetch(`/api/products/${route.params.id}`)
+  setTimeout(() => {
+    product.value = {
+      id: 101,
+      name: 'Набор акварели "Белые ночи"',
+      brand: 'Невская Палитра',
+      price: 2400,
+      category: 'Акварель',
+      description: 'Профессиональные художественные акварельные краски серии «Белые ночи» представляют собой тонкодисперсные суспензии пигментов и связующих, в состав которых входит гуммиарабик — признанный лучшим растительным клеем для приготовления художественных водных красок.',
+      photos: [
+        'https://images.unsplash.com/photo-1629196914375-f7e48f477b6d?auto=format&fit=crop&w=1000&q=80',
+        'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1000&q=80',
+        'https://images.unsplash.com/photo-1520420097861-e4959843b682?auto=format&fit=crop&w=1000&q=80'
+      ],
+      specs: [
+        { label: 'Светостойкость', value: 'Высокая (***)' },
+        { label: 'Количество цветов', value: '24 кюветы' },
+        { label: 'Состав', value: 'Натуральный гуммиарабик' },
+        { label: 'Производитель', value: 'Россия' }
+      ],
+      reviews: [
+        { id: 1, user: 'Марина В.', date: '12.01.2026', text: 'Потрясающая пигментация. Цвета чистые, отлично смешиваются. Доставка в Курск за 2 дня!', rating: 5 },
+        { id: 2, user: 'Алексей', date: '05.02.2026', text: 'Классика, которая не подводит. Упаковано было очень бережно.', rating: 5 }
+      ],
+      related: [
+        { id: 103, name: 'Набор кистей белка', price: 1200, category: 'Кисти', image: 'https://images.unsplash.com/photo-1515462277126-2dd0c162007a?auto=format&fit=crop&w=500&q=80' },
+        { id: 105, name: 'Бумага для акварели 300г', price: 600, category: 'Бумага', image: 'https://images.unsplash.com/photo-1544253907-7359992e2709?auto=format&fit=crop&w=500&q=80' }
+      ]
+    }
+    isLoading.value = false
+  }, 500)
+})
 </script>
 
 <template>
-  <section class="section" v-if="product">
-    <div class="container">
-      <RouterLink class="pill" to="/catalog">← Назад в каталог</RouterLink>
+  <div v-if="!isLoading && product" class="bg-paper min-h-screen pb-24">
+    <div class="container mx-auto px-6 py-12 md:py-20">
+      
+      <nav class="mb-10 text-xs uppercase tracking-widest text-ink-light">
+        <router-link to="/" class="hover:text-clay">Главная</router-link>
+        <span class="mx-3 text-sand">/</span>
+        <router-link to="/catalog" class="hover:text-clay">{{ product.category }}</router-link>
+        <span class="mx-3 text-sand">/</span>
+        <span class="text-ink">{{ product.name }}</span>
+      </nav>
 
-      <div class="product-layout">
-        <div class="gallery card">
-          <img :src="selectedImage || product.images[0]" :alt="product.name" class="main-image" />
-          <div class="thumbs">
-            <button
-              v-for="img in product.images"
-              :key="img"
-              type="button"
-              class="thumb"
-              :class="{ active: (selectedImage || product.images[0]) === img }"
-              @click="changeImage(img)"
-            >
-              <img :src="img" :alt="product.name" />
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 md:gap-24">
+        
+        <div class="lg:col-span-7">
+          <div class="sticky top-24">
+            <div class="aspect-[4/5] overflow-hidden bg-stone-100 rounded-sm mb-6">
+              <transition name="fade" mode="out-in">
+                <img :key="activePhoto" :src="product.photos[activePhoto]" class="w-full h-full object-cover" />
+              </transition>
+            </div>
+            <div class="flex gap-4">
+              <button 
+                v-for="(photo, index) in product.photos" 
+                :key="index"
+                @click="activePhoto = index"
+                class="w-20 h-20 overflow-hidden border transition-all"
+                :class="activePhoto === index ? 'border-clay opacity-100' : 'border-transparent opacity-50 hover:opacity-80'"
+              >
+                <img :src="photo" class="w-full h-full object-cover" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 flex flex-col">
+          <div class="border-b border-sand pb-8 mb-8">
+            <p class="text-clay italic font-serif text-lg mb-2">{{ product.brand }}</p>
+            <h1 class="text-4xl md:text-5xl mb-6 leading-tight">{{ product.name }}</h1>
+            <p class="text-3xl font-light text-ink mb-8">{{ product.price }} ₽</p>
+            
+            <button class="w-full py-4 bg-ink text-white hover:bg-clay transition-colors uppercase tracking-widest text-sm font-medium">
+              Добавить в корзину
             </button>
           </div>
-        </div>
 
-        <div class="product-info card">
-          <span class="pill">{{ product.brand }}</span>
-          <h1 class="title">{{ product.name }}</h1>
-          <p class="subtitle">{{ product.description }}</p>
-
-          <div class="price-row">
-            <span class="price">{{ product.price.toLocaleString('ru-RU') }} ₽</span>
-            <span class="price-old" v-if="product.old_price">{{ product.old_price.toLocaleString('ru-RU') }} ₽</span>
+          <div class="mb-12">
+            <h3 class="font-serif text-xl mb-4 italic text-ink-light">О материале</h3>
+            <p class="text-ink-light leading-relaxed font-light">
+              {{ product.description }}
+            </p>
           </div>
 
-          <ul class="details-list">
-            <li v-for="point in product.details" :key="point">{{ point }}</li>
-          </ul>
-
-          <div class="actions">
-            <input v-model.number="qty" class="input qty" type="number" min="1" max="20" />
-            <button class="btn btn-primary" type="button" @click="addToCart">Добавить в корзину</button>
+          <div class="bg-stone-50 p-8 rounded-sm mb-12">
+            <h3 class="font-serif text-xl mb-6 text-ink">Технические свойства</h3>
+            <div class="space-y-4">
+              <div v-for="spec in product.specs" :key="spec.label" class="flex justify-between border-b border-sand/50 pb-2 text-sm">
+                <span class="text-ink-light font-light">{{ spec.label }}</span>
+                <span class="text-ink font-medium">{{ spec.value }}</span>
+              </div>
+            </div>
           </div>
-
-          <p v-if="store.error" class="notice">{{ store.error }}</p>
         </div>
       </div>
 
-      <div class="product-extra">
-        <article class="card spec-card">
-          <h2>Технические детали</h2>
-          <div class="spec-grid">
-            <div v-for="([key, value]) in techEntries" :key="key">
-              <dt>{{ key }}</dt>
-              <dd>{{ value }}</dd>
+      <div class="mt-32 border-t border-sand pt-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-20">
+          
+          <div class="lg:col-span-7">
+            <h2 class="text-3xl font-serif italic mb-12 text-center md:text-left">Отзывы творцов</h2>
+            <div class="space-y-12">
+              <div v-for="review in product.reviews" :key="review.id" class="border-b border-sand/30 pb-8">
+                <div class="flex justify-between items-center mb-4">
+                  <span class="font-serif text-lg italic">{{ review.user }}</span>
+                  <span class="text-xs text-stone-400 uppercase tracking-tighter">{{ review.date }}</span>
+                </div>
+                <div class="flex text-clay mb-4">
+                  <span v-for="i in 5" :key="i">{{ i <= review.rating ? '★' : '☆' }}</span>
+                </div>
+                <p class="text-ink-light font-light leading-relaxed italic">"{{ review.text }}"</p>
+              </div>
             </div>
           </div>
-        </article>
 
-        <article class="card review-card">
-          <h2>Отзывы покупателей</h2>
-          <div class="reviews">
-            <div v-for="review in product.reviews" :key="review.author + review.date" class="review-item">
-              <strong>{{ review.author }}</strong>
-              <small>{{ review.date }} · {{ review.rating }}/5</small>
-              <p>{{ review.text }}</p>
+          <div class="lg:col-span-5 lg:pl-10">
+            <h2 class="text-3xl font-serif italic mb-12">Дополните палитру</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <ProductCard 
+                v-for="item in product.related" 
+                :key="item.id" 
+                :product="item" 
+              />
             </div>
           </div>
-        </article>
+
+        </div>
       </div>
-
-      <section class="section-tight">
-        <div class="related-head">
-          <h2 class="title">Сопутствующие товары</h2>
-          <RouterLink to="/catalog" class="btn btn-soft">Перейти в каталог</RouterLink>
-        </div>
-        <div class="related-grid">
-          <ProductCard v-for="item in product.related" :key="item.id" :product="item" />
-        </div>
-      </section>
     </div>
-  </section>
+  </div>
+  
+  <div v-else class="h-screen flex items-center justify-center text-clay font-serif italic text-2xl">
+    Открываем галерею...
+  </div>
 </template>
 
 <style scoped>
-.product-layout {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 24px;
-}
-
-.gallery {
-  padding: 16px;
-}
-
-.main-image {
-  width: 100%;
-  height: 460px;
-  border-radius: 14px;
-  object-fit: cover;
-}
-
-.thumbs {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.thumb {
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 0;
-  overflow: hidden;
-  background: transparent;
-  cursor: pointer;
-}
-
-.thumb.active {
-  border-color: rgba(134, 111, 87, 0.65);
-}
-
-.thumb img {
-  width: 100%;
-  height: 85px;
-  object-fit: cover;
-}
-
-.product-info {
-  padding: 26px;
-}
-
-.price-row {
-  margin: 8px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.details-list {
-  margin: 18px 0;
-  padding-left: 18px;
-  color: var(--text-soft);
-}
-
-.actions {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 10px;
-}
-
-.qty {
-  text-align: center;
-}
-
-.product-extra {
-  margin-top: 26px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.spec-card,
-.review-card {
-  padding: 20px;
-}
-
-.spec-card h2,
-.review-card h2 {
-  margin-top: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.9rem;
-}
-
-.spec-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.spec-grid div {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 1px dashed var(--stroke);
-  padding-bottom: 8px;
-}
-
-.spec-grid dt {
-  color: var(--text-soft);
-}
-
-.spec-grid dd {
-  margin: 0;
-}
-
-.reviews {
-  display: grid;
-  gap: 12px;
-}
-
-.review-item {
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.review-item small {
-  color: var(--text-soft);
-}
-
-.review-item p {
-  margin: 6px 0 0;
-}
-
-.related-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  margin-bottom: 20px;
-}
-
-.related-grid {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 1100px) {
-  .product-layout,
-  .product-extra {
-    grid-template-columns: 1fr;
-  }
-
-  .related-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .related-head {
-    flex-direction: column;
-    align-items: start;
-    gap: 10px;
-  }
-
-  .related-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .actions {
-    grid-template-columns: 1fr;
-  }
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

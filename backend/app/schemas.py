@@ -1,9 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+
+class Product(BaseModel):
+    id: int
+    name: str
+    price: int
+    image: str
+    category: str
+    description: Optional[str] = None
+    is_popular: bool = False
 
 class CartItemInput(BaseModel):
     product_id: int

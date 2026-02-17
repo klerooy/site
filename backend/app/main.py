@@ -6,13 +6,15 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .data import promo_codes
+# Импортируем данные (список)
+from .data import promo_codes, products
 from .schemas import (
     CartDeliveryUpdate,
     CartItemInput,
     CheckoutRequest,
     ContactRequest,
     PromoApplyRequest,
+    Product,
 )
 from .services import (
     checkout_order,
@@ -38,6 +40,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -63,9 +66,14 @@ def home() -> dict[str, Any]:
 def categories() -> list[dict[str, Any]]:
     return get_categories()
 
+@app.get("/api/products/popular", response_model=list[Product])
+def get_popular_products():
+    # Теперь products ссылается на импортированный список, а не на функцию ниже
+    return [p for p in products if p.get("is_popular")]
 
+# --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Переименовали функцию из products в get_products ---
 @app.get("/api/products")
-def products(
+def get_products(
     category: str | None = None,
     q: str | None = Query(default=None, alias="query"),
     sort: str = Query(default="new", pattern="^(new|price_asc|price_desc|popular)$"),

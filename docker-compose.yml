@@ -15,13 +15,15 @@ services:
       start_period: 10s
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: artistic-frontend
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    ports:
-      - "8080:80"
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile.dev
+      container_name: artistic-frontend
+      restart: always
+      ports:
+        - "5173:5173" # Порт Vite
+      volumes:
+        - ./frontend:/app # <-- ЭТО САМОЕ ВАЖНОЕ: пробрасываем ваши файлы внутрь
+        - /app/node_modules # Исключаем node_modules, чтобы использовать те, что внутри контейнера
+      environment:
+        - CHOKIDAR_USEPOLLING=true # Помогает отслеживать изменения файлов

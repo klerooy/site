@@ -20,6 +20,19 @@ async function request(path, options = {}) {
   return payload
 }
 
+export async function getPopularProducts() {
+  try {
+    const response = await fetch(`${API_BASE}/products/popular`);
+    if (!response.ok) {
+      throw new Error('Ошибка сети');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Не удалось загрузить популярные товары:', error);
+    return [];
+  }
+}
+
 export const api = {
   getHome: () => request('/home'),
   getCategories: () => request('/categories'),

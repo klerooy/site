@@ -44,6 +44,38 @@ categories: list[dict[str, Any]] = [
 
 products: list[dict[str, Any]] = [
     {
+        "id": 101,
+        "name": "Набор акварели \"Белые ночи\"",
+        "price": 2400,
+        "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800&auto=format&fit=crop",
+        "category": "Акварель",
+        "is_popular": True
+    },
+    {
+        "id": 102,
+        "name": "Холст на подрамнике 40x50",
+        "price": 850,
+        "image": "https://артснаб.рф/wa-data/public/shop/products/53/55/5553/images/23638/23638.970.jpg",
+        "category": "Холсты",
+        "is_popular": True
+    },
+    {
+        "id": 103,
+        "name": "Набор кистей (Синтетика)",
+        "price": 1200,
+        "image": "https://artgammamarket.ru/wa-data/public/shop/products/80/20/2080/images/3714/3714.750x0.jpg",
+        "category": "Кисти",
+        "is_popular": True
+    },
+    {
+        "id": 104,
+        "name": "Масло \"Мастер-Класс\", набор",
+        "price": 3600,
+        "image": "https://krasniykarandash.ru/upload/resize_cache/iblock/2b2/758_758_1/2b238bb540d08a9e19953f616b007865.jpg",
+        "category": "Масло",
+        "is_popular": True
+    },
+    {
         "id": 1,
         "slug": "aquarelle-lumiere-24",
         "name": "Акварель Lumiere, 24 цвета",

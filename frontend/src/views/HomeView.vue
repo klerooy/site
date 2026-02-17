@@ -1,248 +1,147 @@
 <script setup>
-import { onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
-
+import { ref, onMounted } from 'vue'
 import HeroSlider from '../components/HeroSlider.vue'
 import ProductCard from '../components/ProductCard.vue'
-import { useShopStore } from '../stores/shop'
+// Импортируем функцию API
+import { getPopularProducts } from '../api/client.js'
 
-const store = useShopStore()
-
-onMounted(async () => {
-  if (!store.home) {
-    await store.fetchHome()
+const categories = [
+  {
+    id: 1,
+    title: 'Масляные краски',
+    subtitle: 'Классика живописи',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800&auto=format&fit=crop',
+    link: '/catalog/oil'
+  },
+  {
+    id: 2,
+    title: 'Акварель',
+    subtitle: 'Легкость и прозрачность',
+    image: 'https://images.unsplash.com/photo-1629196914375-f7e48f477b6d?q=80&w=800&auto=format&fit=crop',
+    link: '/catalog/watercolor'
+  },
+  {
+    id: 3,
+    title: 'Кисти',
+    subtitle: 'Инструменты мастера',
+    image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=800&auto=format&fit=crop',
+    link: '/catalog/brushes'
+  },
+  {
+    id: 4,
+    title: 'Бумага и Холсты',
+    subtitle: 'Основа творчества',
+    image: 'https://republica.ru/upload/iblock/a19/58A9332.jpg',
+    link: '/catalog/paper'
   }
+]
+
+// Инициализируем пустым массивом
+const popularProducts = ref([])
+
+// Загружаем данные при монтировании компонента
+onMounted(async () => {
+  popularProducts.value = await getPopularProducts()
 })
 </script>
 
 <template>
-  <div>
-    <section class="container page-hero section-tight" v-if="store.home">
-      <HeroSlider :slides="store.home.slider" />
-    </section>
-
-    <section class="section" v-if="store.home">
-      <div class="container">
-        <div class="section-heading">
-          <h2 class="title">Категории с настроением мастерской</h2>
-          <p class="subtitle">Крупные подборки для быстрого старта и вдумчивого выбора.</p>
+  <div class="bg-paper min-h-screen text-charcoal pb-24">
+    <HeroSlider />
+    
+    <section class="py-24">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="font-serif text-4xl md:text-5xl italic mb-4">Начните свой путь</h2>
+          <p class="text-stone-500 font-light text-lg">Всё необходимое для каждого этапа.</p>
         </div>
-
-        <div class="categories-grid">
-          <RouterLink
-            v-for="cat in store.home.categories"
-            :key="cat.slug"
-            class="category-card card"
-            :to="`/catalog?category=${cat.slug}`"
-          >
-            <img :src="cat.image" :alt="cat.name" />
-            <div class="category-overlay">
-              <h3>{{ cat.name }}</h3>
-              <p>{{ cat.description }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <router-link v-for="category in categories" :key="category.id" :to="category.link" class="group relative aspect-[16/9] overflow-hidden rounded-sm block">
+            <img :src="category.image" :alt="category.title" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105">
+            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+            <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-4 text-white">
+              <h3 class="font-serif text-4xl italic drop-shadow-md">{{ category.title }}</h3>
+              <p class="font-light mt-2 opacity-80">{{ category.subtitle }}</p>
             </div>
-          </RouterLink>
+          </router-link>
         </div>
       </div>
     </section>
 
-    <section class="section" v-if="store.home">
-      <div class="container">
-        <div class="section-heading">
-          <h2 class="title">Хиты продаж</h2>
-          <RouterLink class="btn btn-soft" to="/catalog?sort=popular">Смотреть всё</RouterLink>
+    <section class="bg-white py-24 border-y border-stone-100">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12">
+          <h2 class="font-serif text-3xl italic">Выбор художников</h2>
+          <router-link to="/catalog" class="text-clay hover:text-charcoal transition-colors border-b border-clay pb-1 text-sm uppercase tracking-wider mt-4 md:mt-0">Смотреть всё</router-link>
+        </div>
+        
+        <div v-if="popularProducts.length === 0" class="text-center py-12 text-stone-400 font-light">
+          Загрузка шедевров...
         </div>
 
-        <div class="products-grid">
-          <ProductCard v-for="product in store.home.popular" :key="product.id" :product="product" />
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <ProductCard v-for="product in popularProducts" :key="product.id" :product="product" />
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container help-grid card">
-        <div>
-          <span class="pill">Помощь в выборе</span>
-          <h2 class="title">Не знаете, с чего начать?</h2>
-          <p>
-            Сервис подберет набор под ваш уровень: от первых скетчей до материалов для мастерской.
-            Отдельно собрали подарочные решения и сертификаты.
-          </p>
-          <div class="help-actions">
-            <RouterLink class="btn btn-primary" to="/specials">Наборы для новичков</RouterLink>
-            <RouterLink class="btn btn-soft" to="/contacts">Получить консультацию</RouterLink>
+    <section class="py-24 bg-paper">
+      <div class="container mx-auto px-6">
+        
+        <div class="mb-16">
+          <h2 class="font-serif text-4xl md:text-5xl italic text-charcoal max-w-xl leading-tight">
+            Магазин товаров <br> для художников
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          
+          <div class="flex flex-col gap-8">
+            <div class="bg-stone-800 text-white p-8 md:p-10 rounded-[1.5rem] hover:bg-stone-700 transition-colors duration-500 relative overflow-hidden group">
+              <img src="https://images.unsplash.com/photo-1515964724036-7c390234a908?q=80&w=400&auto=format&fit=crop" 
+                   class="absolute -bottom-10 -right-10 w-48 opacity-10 rotate-12 grayscale pointer-events-none" alt="pencil">
+              <h3 class="font-serif text-2xl italic mb-6 leading-snug relative z-10">
+                Почему большинство художников выбирает art.shop?
+              </h3>
+              <div class="font-light leading-relaxed text-stone-200 space-y-4 relative z-10 text-sm md:text-base">
+                <p><strong class="text-white font-medium">art.shop</strong> — это пространство для профессиональных художников и творческих людей в Курске.</p>
+                <p>Приходите в гости в наш уютный арт-маркет или закажите материалы онлайн.</p>
+                <p class="pt-2 text-clay italic">Кисти, краски, маркеры для скетчинга, мольберты и скетчбуки — у нас есть всё!</p>
+              </div>
+            </div>
+
+            <div class="bg-stone-100 p-8 md:p-10 rounded-[1.5rem] hover:bg-stone-200 transition-colors duration-500">
+              <h3 class="font-serif text-2xl italic mb-4 text-charcoal">Редкие и эксклюзивные</h3>
+              <div class="text-stone-600 font-light leading-relaxed space-y-4 text-sm md:text-base">
+                <p>Материалы из Европы, Америки, Японии, а также проверенные Российские бренды.</p>
+                <p>Мы находим то, что сложно достать, чтобы вы могли творить без ограничений и компромиссов.</p>
+              </div>
+            </div>
           </div>
+
+          <div class="flex flex-col gap-8 md:mt-24">
+            <div class="bg-stone-100 p-8 md:p-10 rounded-[1.5rem] hover:bg-stone-200 transition-colors duration-500">
+              <h3 class="font-serif text-2xl italic mb-4 text-charcoal">Всё для художников</h3>
+              <div class="text-stone-600 font-light leading-relaxed space-y-4 text-sm md:text-base">
+                <p>Бережная доставка и упаковка. Мы работаем с художественными материалами много лет — ничего не повредится и не помнется.</p>
+                <p>Более 60 000 товаров со всего мира — это так много, что не уместить даже на футбольном поле.</p>
+              </div>
+            </div>
+
+            <div class="bg-stone-100 p-8 md:p-10 rounded-[1.5rem] hover:bg-stone-200 transition-colors duration-500">
+              <h3 class="font-serif text-2xl italic mb-4 text-charcoal">Бонусы и подарки</h3>
+              <ul class="text-stone-600 font-light leading-relaxed space-y-2 text-sm md:text-base list-disc list-inside marker:text-clay">
+                <li>Оплачивайте товары бонусными рублями.</li>
+                <li>Получайте подарки и бесплатные образцы материалов при покупке.</li>
+                <li>Доступ к закрытым распродажам.</li>
+                <li>Клуб привилегий в нашем Telegram-канале.</li>
+              </ul>
+            </div>
+          </div>
+
         </div>
-        <img
-          src="https://images.unsplash.com/photo-1453738773917-9c3eff1db985?auto=format&fit=crop&w=1400&q=80"
-          alt="Творческий набор"
-        />
       </div>
     </section>
 
-    <section class="section" v-if="store.home">
-      <div class="container">
-        <div class="section-heading">
-          <h2 class="title">Акции</h2>
-          <p class="subtitle">Сезонные предложения и мягкие скидки на любимые материалы.</p>
-        </div>
-        <div class="products-grid">
-          <ProductCard v-for="product in store.home.promotions" :key="product.id" :product="product" />
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container benefits-grid" v-if="store.home">
-        <article v-for="item in store.home.benefits" :key="item.title" class="benefit card">
-          <div class="benefit-icon">{{ item.icon }}</div>
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.description }}</p>
-        </article>
-      </div>
-    </section>
   </div>
 </template>
-
-<style scoped>
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.categories-grid {
-  display: grid;
-  gap: 22px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.category-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 300px;
-}
-
-.category-card img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.category-card:hover img {
-  transform: scale(1.05);
-}
-
-.category-overlay {
-  position: absolute;
-  inset: auto 0 0;
-  padding: 20px;
-  background: linear-gradient(to top, rgba(45, 37, 31, 0.78), rgba(45, 37, 31, 0.12));
-  color: #fff6ec;
-}
-
-.category-overlay h3 {
-  margin: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.8rem;
-}
-
-.category-overlay p {
-  margin: 4px 0 0;
-  color: rgba(255, 246, 236, 0.85);
-}
-
-.products-grid {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.help-grid {
-  padding: 36px;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 24px;
-  align-items: center;
-}
-
-.help-grid p {
-  color: var(--text-soft);
-  margin: 16px 0 24px;
-}
-
-.help-grid img {
-  border-radius: 18px;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.help-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.benefits-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.benefit {
-  padding: 20px;
-}
-
-.benefit-icon {
-  font-size: 1.5rem;
-}
-
-.benefit h3 {
-  margin: 10px 0 8px;
-}
-
-.benefit p {
-  margin: 0;
-  color: var(--text-soft);
-}
-
-@media (max-width: 1100px) {
-  .categories-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .products-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .benefits-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .section-heading {
-    flex-direction: column;
-    align-items: start;
-  }
-
-  .categories-grid,
-  .products-grid,
-  .benefits-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .help-grid {
-    grid-template-columns: 1fr;
-    padding: 22px;
-  }
-
-  .help-actions {
-    flex-direction: column;
-  }
-}
-</style>
